@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aadhaar Policy Scenario Builder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider {
+            flex: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .slider-value {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .card-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+
+        .card-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .risk-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .risk-high {
+            background: #fee;
+            color: #c00;
+        }
+
+        .risk-medium {
+            background: #ffeaa7;
+            color: #d63031;
+        }
+
+        .risk-low {
+            background: #dfe6e9;
+            color: #2d3436;
+        }
+
+        .visualization {
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .visualization img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏛️ Aadhaar Policy Scenario Builder</h1>
+            <p>Define policy parameters and predict regional impact instantly</p>
+        </div>
+
+        <div class="content">
+            <!-- Input Section -->
+            <div class="section">
+                <h2>📋 Policy Input Parameters</h2>
+                
+                <form id="policyForm">
+                    <div class="form-group">
+                        <label for="policyName">Policy Name *</label>
+                        <input type="text" id="policyName" required 
+                               placeholder="e.g., Mandatory Biometric Update 2025">
+                        <small>Give your policy a descriptive name</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="policyDate">Policy Start Date *</label>
+                        <input type="date" id="policyDate" required>
+                        <small>When will this policy be implemented?</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="policyType">Policy Type *</label>
+                        <select id="policyType" required>
+                            <option value="Both">Both (Enrolment + Update)</option>
+                            <option value="Enrolment">Enrolment Only</option>
+                            <option value="Update">Update Only</option>
+                        </select>
+                        <small>What type of Aadhaar action is required?</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ageGroups">Affected Age Group</label>
+                        <select id="ageGroups" multiple size="3">
+                            <option value="0-5" selected>0-5 years</option>
+                            <option value="5-17" selected>5-17 years</option>
+                            <option value="18+" selected>18+ years</option>
+                        </select>
+                        <small>Hold Ctrl/Cmd to select multiple</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="states">Affected States</label>
+                        <select id="states" multiple size="5">
+                            <option value="All States" selected>All States</option>
+                        </select>
+                        <small>Select specific states or keep "All States"</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="complianceLevel">Expected Compliance Level</label>
+                        <div class="slider-container">
+                            <input type="range" id="complianceLevel" class="slider" 
+                                   min="0" max="100" value="80" step="5">
+                            <span class="slider-value" id="complianceValue">80%</span>
+                        </div>
+                        <small>What % of affected people will comply?</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="forecastDays">Forecast Period (days)</label>
+                        <select id="forecastDays">
+                            <option value="30">30 days</option>
+                            <option value="60" selected>60 days</option>
+                            <option value="90">90 days</option>
+                        </select>
+                        <small>How far ahead to predict?</small>
+                    </div>
+
+                    <button type="submit" class="btn" id="predictBtn">
+                        🔮 Predict Impact
+                    </button>
+                </form>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing policy impact...</p>
+                    <small>This may take 30-60 seconds</small>
+                </div>
+
+                <div class="error" id="error"></div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="section results" id="results">
+                <h2>📊 Impact Predictions</h2>
+                
+                <div class="summary-cards">
+                    <div class="card">
+                        <div class="card-label">Total People Affected</div>
+                        <div class="card-value" id="totalAffected">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Peak Date</div>
+                        <div class="card-value" id="peakDate" style="font-size: 1.3em;">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Peak Volume</div>
+                        <div class="card-value" id="peakVolume">-</div>
+                    </div>
+                </div>
+
+                <div class="summary-cards">
+                    <div class="card">
+                        <div class="card-label">Enrolments</div>
+                        <div class="card-value" id="totalEnrolments" style="color: #2E86AB;">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Updates</div>
+                        <div class="card-value" id="totalUpdates" style="color: #A23B72;">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Duration</div>
+                        <div class="card-value" id="duration">-</div>
+                        <small>days</small>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 25px; color: #667eea;">Regional Impact Analysis</h3>
+                <div class="table-container">
+                    <table id="regionalTable">
+                        <thead>
+                            <tr>
+                                <th>State</th>
+                                <th>Enrolments</th>
+                                <th>Updates</th>
+                                <th>Total Impact</th>
+                                <th>% Increase</th>
+                                <th>Risk Level</th>
+                            </tr>
+                        </thead>
+                        <tbody id="regionalTableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="visualization" id="visualization">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">Visual Analysis</h3>
+                    <img id="vizImage" src="" alt="Visualization">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load states on page load
+        fetch('/api/states')
+            .then(response => response.json())
+            .then(data => {
+                const statesSelect = document.getElementById('states');
+                data.states.forEach(state => {
+                    const option = document.createElement('option');
+                    option.value = state;
+                    option.textContent = state;
+                    statesSelect.appendChild(option);
+                });
+            });
+
+        // Update compliance slider value
+        document.getElementById('complianceLevel').addEventListener('input', function() {
+            document.getElementById('complianceValue').textContent = this.value + '%';
+        });
+
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('policyDate').setAttribute('min', today);
+        document.getElementById('policyDate').value = today;
+
+        // Form submission
+        document.getElementById('policyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Show loading, hide results and errors
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('results').classList.remove('active');
+            document.getElementById('error').classList.remove('active');
+            document.getElementById('predictBtn').disabled = true;
+
+            // Collect form data
+            const formData = {
+                policy_name: document.getElementById('policyName').value,
+                policy_date: document.getElementById('policyDate').value,
+                policy_type: document.getElementById('policyType').value,
+                age_groups: Array.from(document.getElementById('ageGroups').selectedOptions).map(o => o.value),
+                states: Array.from(document.getElementById('states').selectedOptions).map(o => o.value),
+                compliance_level: document.getElementById('complianceLevel').value / 100,
+                forecast_days: document.getElementById('forecastDays').value
+            };
+
+            try {
+                // Call prediction API
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                // Display results
+                displayResults(result);
+
+                // Generate visualization
+                generateVisualization(result);
+
+            } catch (error) {
+                document.getElementById('error').textContent = 'Error: ' + error.message;
+                document.getElementById('error').classList.add('active');
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('predictBtn').disabled = false;
+            }
+        });
+
+        function displayResults(result) {
+            // Update summary cards
+            document.getElementById('totalAffected').textContent = 
+                result.summary.total_people_affected.toLocaleString();
+            document.getElementById('totalEnrolments').textContent = 
+                result.summary.total_enrolments.toLocaleString();
+            document.getElementById('totalUpdates').textContent = 
+                result.summary.total_updates.toLocaleString();
+            document.getElementById('peakDate').textContent = result.summary.peak_date;
+            document.getElementById('peakVolume').textContent = 
+                result.summary.peak_volume.toLocaleString();
+            document.getElementById('duration').textContent = result.summary.duration_days;
+
+            // Update regional table
+            const tbody = document.getElementById('regionalTableBody');
+            tbody.innerHTML = '';
+
+            result.regional_impact.forEach(region => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>${region.state}</strong></td>
+                    <td>${region.predicted_enrolments.toLocaleString()}</td>
+                    <td>${region.predicted_updates.toLocaleString()}</td>
+                    <td><strong>${region.total_impact.toLocaleString()}</strong></td>
+                    <td>${region.pct_increase}%</td>
+                    <td><span class="risk-badge risk-${region.risk_level.toLowerCase()}">${region.risk_level}</span></td>
+                `;
+            });
+
+            // Show results section
+            document.getElementById('results').classList.add('active');
+        }
+
+        async function generateVisualization(result) {
+            try {
+                const response = await fetch('/api/visualize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        daily_data: result.daily_impact,
+                        regional_data: result.regional_impact
+                    })
+                });
+
+                const vizResult = await response.json();
+                
+                if (vizResult.success) {
+                    document.getElementById('vizImage').src = vizResult.image;
+                }
+            } catch (error) {
+                console.error('Visualization error:', error);
+            }
+        }
+
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    </script>
+</body>
+</html>

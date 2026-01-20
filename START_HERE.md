@@ -65,6 +65,16 @@ Plus 6 generated files (report + visualizations)!
 
 ## 🎯 Choose Your Path
 
+### 🌐 I Want a Visual Web Interface (NEW!) ⭐⭐⭐
+**Perfect for non-technical users and policymakers**
+
+1. **Install**: `pip install -r requirements.txt`
+2. **Start**: `python start_web_interface.py`
+3. **Open**: `http://localhost:5000` in your browser
+4. **Use**: Fill in the form and click "Predict Impact"
+
+→ See [WEB_INTERFACE_README.md](WEB_INTERFACE_README.md) for details
+
 ### 👤 I'm a Policymaker / Decision Maker
 1. **Read**: [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) (10 min)
 2. **Run**: `python example_usage.py` (10 min)

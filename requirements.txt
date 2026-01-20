@@ -7,3 +7,4 @@ statsmodels>=0.14.0
 scipy>=1.11.0
 jupyter>=1.0.0
 plotly>=5.14.0
+flask>=2.3.0
