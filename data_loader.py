@@ -296,6 +296,22 @@ class AadhaarDataLoader:
         master = pd.merge(enrol_clean, updates_clean, on=['date', 'state'], how='outer')
         master.fillna(0, inplace=True)
         
+        # FINAL VALIDATION: Only keep official 28 states + 8 UTs
+        valid_states = {
+            'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+            'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
+            'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+            'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+            'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+            'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+            'Andaman and Nicobar Islands', 'Chandigarh',
+            'Dadra and Nagar Haveli and Daman and Diu', 'Delhi',
+            'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'
+        }
+        
+        # Filter to keep ONLY valid states
+        master = master[master['state'].isin(valid_states)]
+        
         # Sort by date and state
         master.sort_values(['date', 'state'], inplace=True)
         master.reset_index(drop=True, inplace=True)
@@ -303,6 +319,7 @@ class AadhaarDataLoader:
         print(f"\nMaster dataset created: {len(master)} records")
         print(f"Date range: {master['date'].min()} to {master['date'].max()}")
         print(f"States: {master['state'].nunique()}")
+        print(f"Valid states in data: {sorted(master['state'].unique())}")
         
         return master
 

@@ -178,9 +178,9 @@ def apply_policy_filters(results, policy_type, age_groups, states, compliance_le
     # Apply compliance level adjustment
     compliance_factor = compliance_level
     
-    # Calculate filtered totals
-    total_enrolments = summary['total_enrolment_increase'] * compliance_factor
-    total_updates = summary['total_update_increase'] * compliance_factor
+    # Calculate filtered totals - ensure positive values
+    total_enrolments = max(0, summary['total_enrolment_increase'] * compliance_factor)
+    total_updates = max(0, summary['total_update_increase'] * compliance_factor)
     
     # Apply policy type filter
     if policy_type == 'Enrolment':
@@ -190,15 +190,32 @@ def apply_policy_filters(results, policy_type, age_groups, states, compliance_le
     
     total_affected = total_enrolments + total_updates
     
-    # Filter regional data
+    # Official list of valid states
+    valid_states = {
+        'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+        'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
+        'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+        'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+        'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+        'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+        'Andaman and Nicobar Islands', 'Chandigarh',
+        'Dadra and Nagar Haveli and Daman and Diu', 'Delhi',
+        'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'
+    }
+    
+    # Filter regional data - ONLY official states
     regional_data = []
     for state in regional['total_impact'].keys():
+        # STRICT CHECK: Only include if in official list
+        if state not in valid_states:
+            continue
+            
         # Skip if specific states selected and this state not in list
         if states and 'All States' not in states and state not in states:
             continue
         
-        enrol_impact = regional['enrolment_impact'][state] * compliance_factor
-        update_impact = regional['update_impact'][state] * compliance_factor
+        enrol_impact = max(0, regional['enrolment_impact'][state] * compliance_factor)
+        update_impact = max(0, regional['update_impact'][state] * compliance_factor)
         
         if policy_type == 'Enrolment':
             update_impact = 0
@@ -232,11 +249,11 @@ def apply_policy_filters(results, policy_type, age_groups, states, compliance_le
     # Sort by total impact
     regional_data.sort(key=lambda x: x['total_impact'], reverse=True)
     
-    # Prepare daily data
+    # Prepare daily data - ensure positive values
     daily_data = []
     for _, row in daily.iterrows():
-        enrol = row['enrolment_impact'] * compliance_factor
-        update = row['update_impact'] * compliance_factor
+        enrol = max(0, row['enrolment_impact'] * compliance_factor)
+        update = max(0, row['update_impact'] * compliance_factor)
         
         if policy_type == 'Enrolment':
             update = 0
@@ -250,20 +267,18 @@ def apply_policy_filters(results, policy_type, age_groups, states, compliance_le
             'total': int(enrol + update)
         })
     
-    # Find peak
+    # Find peak - ensure positive
     if daily_data:
         peak_day = max(daily_data, key=lambda x: x['total'])
         peak_date = peak_day['date']
-        peak_volume = peak_day['total']
+        peak_volume = max(0, peak_day['total'])
     else:
         peak_date = policy_date
         peak_volume = 0
     
-    # Calculate duration (number of days with significant impact)
+    # Calculate duration
     if daily_data and total_affected > 0:
-        # Calculate average daily impact
         avg_daily = total_affected / len(daily_data) if len(daily_data) > 0 else 0
-        # Count days with above-average impact
         significant_days = [d for d in daily_data if d['total'] > avg_daily]
         duration = len(significant_days)
     else:
@@ -277,12 +292,12 @@ def apply_policy_filters(results, policy_type, age_groups, states, compliance_le
     }
     
     return {
-        'total_affected': total_affected,
-        'total_enrolments': total_enrolments,
-        'total_updates': total_updates,
+        'total_affected': max(0, total_affected),
+        'total_enrolments': max(0, total_enrolments),
+        'total_updates': max(0, total_updates),
         'peak_date': peak_date,
-        'peak_volume': peak_volume,
-        'duration': duration,
+        'peak_volume': max(0, peak_volume),
+        'duration': max(0, duration),
         'regional_data': regional_data,
         'daily_data': daily_data,
         'risk_levels': risk_levels
