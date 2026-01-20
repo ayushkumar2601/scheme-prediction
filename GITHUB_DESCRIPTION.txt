@@ -1,0 +1,1 @@
+ML-powered policy impact prediction system for Aadhaar enrolment and update forecasting. Features interrupted time series analysis, regional impact modeling, and an interactive web interface with bento-box visualization. Predicts affected populations, peak volumes, and duration across Indian states for data-driven policy decisions.
