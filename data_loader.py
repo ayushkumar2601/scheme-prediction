@@ -62,6 +62,62 @@ class AadhaarDataLoader:
         # Convert date to datetime
         df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y')
         
+        # Clean and standardize state names
+        df['state'] = df['state'].astype(str).str.strip()
+        
+        # Remove rows where state is numeric or too short
+        df = df[df['state'].str.len() > 2]
+        df = df[~df['state'].str.isdigit()]
+        df = df[df['state'].notna()]
+        df = df[df['state'] != '']
+        df = df[df['state'] != 'nan']
+        
+        # Standardize state names (case-insensitive mapping)
+        state_mapping = {
+            # Andaman & Nicobar
+            'andaman & nicobar islands': 'Andaman and Nicobar Islands',
+            'andaman and nicobar islands': 'Andaman and Nicobar Islands',
+            
+            # Andhra Pradesh
+            'andhra pradesh': 'Andhra Pradesh',
+            
+            # Dadra & Nagar Haveli
+            'dadra & nagar haveli': 'Dadra and Nagar Haveli and Daman and Diu',
+            'dadra and nagar haveli': 'Dadra and Nagar Haveli and Daman and Diu',
+            'dadra and nagar haveli and daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'the dadra and nagar haveli and daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            
+            # Daman & Diu
+            'daman & diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            
+            # Jammu & Kashmir
+            'jammu & kashmir': 'Jammu and Kashmir',
+            'jammu and kashmir': 'Jammu and Kashmir',
+            
+            # Odisha
+            'odisha': 'Odisha',
+            'orissa': 'Odisha',
+            
+            # Puducherry
+            'pondicherry': 'Puducherry',
+            'puducherry': 'Puducherry',
+            
+            # West Bengal
+            'west bengal': 'West Bengal',
+            'west  bengal': 'West Bengal',
+            'west bangal': 'West Bengal',
+            'westbengal': 'West Bengal',
+        }
+        
+        # Apply mapping (case-insensitive)
+        df['state_lower'] = df['state'].str.lower()
+        df['state'] = df['state_lower'].map(state_mapping).fillna(df['state'])
+        df = df.drop('state_lower', axis=1)
+        
+        # Title case for states not in mapping
+        df['state'] = df['state'].str.title()
+        
         # Calculate total enrolments
         df['total_enrolments'] = df['age_0_5'] + df['age_5_17'] + df['age_18_greater']
         
@@ -71,7 +127,7 @@ class AadhaarDataLoader:
             'age_0_5': 'sum',
             'age_5_17': 'sum',
             'age_18_greater': 'sum',
-            'district': 'count'  # Count of districts
+            'district': 'count'
         }).reset_index()
         
         agg_df.rename(columns={'district': 'num_districts'}, inplace=True)
@@ -80,8 +136,47 @@ class AadhaarDataLoader:
     
     def clean_and_aggregate_updates(self, bio_df: pd.DataFrame, demo_df: pd.DataFrame) -> pd.DataFrame:
         """Clean and aggregate update data (biometric + demographic)"""
+        
+        # State name standardization mapping
+        state_mapping = {
+            'andaman & nicobar islands': 'Andaman and Nicobar Islands',
+            'andaman and nicobar islands': 'Andaman and Nicobar Islands',
+            'andhra pradesh': 'Andhra Pradesh',
+            'dadra & nagar haveli': 'Dadra and Nagar Haveli and Daman and Diu',
+            'dadra and nagar haveli': 'Dadra and Nagar Haveli and Daman and Diu',
+            'dadra and nagar haveli and daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'the dadra and nagar haveli and daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'daman & diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'jammu & kashmir': 'Jammu and Kashmir',
+            'jammu and kashmir': 'Jammu and Kashmir',
+            'odisha': 'Odisha',
+            'orissa': 'Odisha',
+            'pondicherry': 'Puducherry',
+            'puducherry': 'Puducherry',
+            'west bengal': 'West Bengal',
+            'west  bengal': 'West Bengal',
+            'west bangal': 'West Bengal',
+            'westbengal': 'West Bengal',
+        }
+        
         # Process biometric updates
         bio_df['date'] = pd.to_datetime(bio_df['date'], format='%d-%m-%Y')
+        
+        # Clean and standardize state names
+        bio_df['state'] = bio_df['state'].astype(str).str.strip()
+        bio_df = bio_df[bio_df['state'].str.len() > 2]
+        bio_df = bio_df[~bio_df['state'].str.isdigit()]
+        bio_df = bio_df[bio_df['state'].notna()]
+        bio_df = bio_df[bio_df['state'] != '']
+        bio_df = bio_df[bio_df['state'] != 'nan']
+        
+        # Apply mapping
+        bio_df['state_lower'] = bio_df['state'].str.lower()
+        bio_df['state'] = bio_df['state_lower'].map(state_mapping).fillna(bio_df['state'])
+        bio_df = bio_df.drop('state_lower', axis=1)
+        bio_df['state'] = bio_df['state'].str.title()
+        
         bio_df['total_bio_updates'] = bio_df['bio_age_5_17'] + bio_df['bio_age_17_']
         
         bio_agg = bio_df.groupby(['date', 'state']).agg({
@@ -92,6 +187,21 @@ class AadhaarDataLoader:
         
         # Process demographic updates
         demo_df['date'] = pd.to_datetime(demo_df['date'], format='%d-%m-%Y')
+        
+        # Clean and standardize state names
+        demo_df['state'] = demo_df['state'].astype(str).str.strip()
+        demo_df = demo_df[demo_df['state'].str.len() > 2]
+        demo_df = demo_df[~demo_df['state'].str.isdigit()]
+        demo_df = demo_df[demo_df['state'].notna()]
+        demo_df = demo_df[demo_df['state'] != '']
+        demo_df = demo_df[demo_df['state'] != 'nan']
+        
+        # Apply mapping
+        demo_df['state_lower'] = demo_df['state'].str.lower()
+        demo_df['state'] = demo_df['state_lower'].map(state_mapping).fillna(demo_df['state'])
+        demo_df = demo_df.drop('state_lower', axis=1)
+        demo_df['state'] = demo_df['state'].str.title()
+        
         demo_df['total_demo_updates'] = demo_df['demo_age_5_17'] + demo_df['demo_age_17_']
         
         demo_agg = demo_df.groupby(['date', 'state']).agg({

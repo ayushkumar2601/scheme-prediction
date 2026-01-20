@@ -49,8 +49,25 @@ def index():
 def get_states():
     """Get list of available states"""
     pred = initialize_predictor()
-    states = sorted(pred.master_data['state'].unique().tolist())
-    return jsonify({'states': states})
+    
+    # Get unique states and clean them
+    states = pred.master_data['state'].unique().tolist()
+    
+    # Filter out non-string values and clean
+    cleaned_states = []
+    for state in states:
+        # Only keep string values that look like state names
+        if isinstance(state, str) and len(state) > 2 and not state.isdigit():
+            # Remove any leading/trailing whitespace
+            cleaned_state = state.strip()
+            # Only add if not already in list (remove duplicates)
+            if cleaned_state not in cleaned_states:
+                cleaned_states.append(cleaned_state)
+    
+    # Sort alphabetically
+    cleaned_states.sort()
+    
+    return jsonify({'states': cleaned_states})
 
 @app.route('/api/predict', methods=['POST'])
 def predict_policy_impact():
@@ -217,9 +234,15 @@ def apply_policy_filters(results, policy_type, age_groups, states, compliance_le
         peak_date = policy_date
         peak_volume = 0
     
-    # Calculate duration
-    significant_days = [d for d in daily_data if d['total'] > (total_affected / len(daily_data))]
-    duration = len(significant_days)
+    # Calculate duration (number of days with significant impact)
+    if daily_data and total_affected > 0:
+        # Calculate average daily impact
+        avg_daily = total_affected / len(daily_data) if len(daily_data) > 0 else 0
+        # Count days with above-average impact
+        significant_days = [d for d in daily_data if d['total'] > avg_daily]
+        duration = len(significant_days)
+    else:
+        duration = 0
     
     # Risk assessment
     risk_levels = {
