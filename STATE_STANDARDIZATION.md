@@ -1,106 +1,81 @@
 # State Name Standardization
 
-## Issue
-Multiple variations of the same state name appearing in the data due to:
-- Different cases (ODISHA, Odisha, odisha)
-- Different spellings (West Bengal, Westbengal, West Bangal)
-- Different formats (Jammu & Kashmir, Jammu and Kashmir)
+## Official List of Indian States and Union Territories
+
+### States (28)
+1. Andhra Pradesh
+2. Arunachal Pradesh
+3. Assam
+4. Bihar
+5. Chhattisgarh
+6. Goa
+7. Gujarat
+8. Haryana
+9. Himachal Pradesh
+10. Jharkhand
+11. Karnataka
+12. Kerala
+13. Madhya Pradesh
+14. Maharashtra
+15. Manipur
+16. Meghalaya
+17. Mizoram
+18. Nagaland
+19. Odisha
+20. Punjab
+21. Rajasthan
+22. Sikkim
+23. Tamil Nadu
+24. Telangana
+25. Tripura
+26. Uttar Pradesh
+27. Uttarakhand
+28. West Bengal
+
+### Union Territories (8)
+1. Andaman and Nicobar Islands
+2. Chandigarh
+3. Dadra and Nagar Haveli and Daman and Diu
+4. Delhi
+5. Jammu and Kashmir
+6. Ladakh
+7. Lakshadweep
+8. Puducherry
+
+**Total: 36 States/UTs**
 
 ## Solution
-Standardized all state names to official names, case-insensitive.
 
-## Standardization Mapping
+All state names in the data are now standardized to match the official list above. Any misspellings, variations, or old names are automatically mapped to the correct official name.
 
-### Applied Mappings:
+## Common Variations Handled
 
 | Variations Found | Standardized To |
 |------------------|-----------------|
-| Andaman & Nicobar Islands<br>Andaman and Nicobar Islands | **Andaman and Nicobar Islands** |
-| andhra pradesh<br>Andhra Pradesh | **Andhra Pradesh** |
-| Dadra & Nagar Haveli<br>Dadra and Nagar Haveli<br>Daman & Diu<br>Daman and Diu<br>The Dadra And Nagar Haveli And Daman And Diu | **Dadra and Nagar Haveli and Daman and Diu** |
-| Jammu & Kashmir<br>Jammu And Kashmir<br>Jammu and Kashmir | **Jammu and Kashmir** |
-| ODISHA<br>Odisha<br>Orissa | **Odisha** |
-| Pondicherry<br>Puducherry | **Puducherry** |
-| WEST BENGAL<br>West Bengal<br>West  Bengal<br>West Bangal<br>Westbengal<br>WESTBENGAL<br>West bengal | **West Bengal** |
-
-## Final List of States (36 States/UTs)
-
-After standardization, you should see exactly these states:
-
-1. Andaman and Nicobar Islands
-2. Andhra Pradesh
-3. Arunachal Pradesh
-4. Assam
-5. Bihar
-6. Chandigarh
-7. Chhattisgarh
-8. Dadra and Nagar Haveli and Daman and Diu
-9. Delhi
-10. Goa
-11. Gujarat
-12. Haryana
-13. Himachal Pradesh
-14. Jammu and Kashmir
-15. Jharkhand
-16. Karnataka
-17. Kerala
-18. Ladakh
-19. Lakshadweep
-20. Madhya Pradesh
-21. Maharashtra
-22. Manipur
-23. Meghalaya
-24. Mizoram
-25. Nagaland
-26. Odisha
-27. Puducherry
-28. Punjab
-29. Rajasthan
-30. Sikkim
-31. Tamil Nadu
-32. Telangana
-33. Tripura
-34. Uttar Pradesh
-35. Uttarakhand
-36. West Bengal
+| ODISHA, Odisha, Orissa | **Odisha** |
+| WEST BENGAL, West Bengal, Westbengal, West Bangal | **West Bengal** |
+| Jammu & Kashmir, Jammu And Kashmir | **Jammu and Kashmir** |
+| Pondicherry | **Puducherry** |
+| Uttaranchal | **Uttarakhand** |
+| Dadra & Nagar Haveli, Daman & Diu | **Dadra and Nagar Haveli and Daman and Diu** |
+| Delhi (National Capital Territory), NCT of Delhi | **Delhi** |
+| Andaman & Nicobar Islands | **Andaman and Nicobar Islands** |
 
 ## How It Works
 
-### Step 1: Clean Invalid Entries
-- Remove numeric values
-- Remove entries shorter than 3 characters
-- Remove NaN/empty values
+1. **Case-Insensitive Matching**: All comparisons ignore case
+2. **Exact Mapping**: Only states in the official list are kept
+3. **Invalid States Removed**: Any state not in the mapping is filtered out
+4. **No Duplicates**: Aggregation ensures each state appears only once
 
-### Step 2: Standardize Names (Case-Insensitive)
-```python
-# Convert to lowercase for comparison
-state_lower = state.lower()
+## Expected Result
 
-# Apply mapping
-if state_lower in mapping:
-    state = mapping[state_lower]
-else:
-    state = state.title()  # Title case for unmapped states
-```
-
-### Step 3: Aggregate
-- Group by standardized state name
-- Sum all metrics
-
-## Testing
-
-Run this to verify:
-```bash
-python test_fixes.py
-```
-
-You should see exactly 36 unique states (or fewer if some states have no data).
-
-## Files Modified
-
-1. ✅ `data_loader.py` - Added state standardization in:
-   - `clean_and_aggregate_enrolment()`
-   - `clean_and_aggregate_updates()`
+After standardization, the dropdown will show **exactly 36 states/UTs** (or fewer if some have no data):
+- 28 States
+- 8 Union Territories
+- No duplicates
+- No misspellings
+- Official names only
 
 ## How to Apply
 

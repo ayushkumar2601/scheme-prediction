@@ -72,51 +72,76 @@ class AadhaarDataLoader:
         df = df[df['state'] != '']
         df = df[df['state'] != 'nan']
         
-        # Standardize state names (case-insensitive mapping)
+        # Official list of 28 States + 8 UTs
+        # Standardize to exact official names (case-insensitive mapping)
         state_mapping = {
-            # Andaman & Nicobar
-            'andaman & nicobar islands': 'Andaman and Nicobar Islands',
-            'andaman and nicobar islands': 'Andaman and Nicobar Islands',
-            
-            # Andhra Pradesh
+            # States (28)
             'andhra pradesh': 'Andhra Pradesh',
-            
-            # Dadra & Nagar Haveli
-            'dadra & nagar haveli': 'Dadra and Nagar Haveli and Daman and Diu',
-            'dadra and nagar haveli': 'Dadra and Nagar Haveli and Daman and Diu',
-            'dadra and nagar haveli and daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
-            'the dadra and nagar haveli and daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
-            
-            # Daman & Diu
-            'daman & diu': 'Dadra and Nagar Haveli and Daman and Diu',
-            'daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
-            
-            # Jammu & Kashmir
-            'jammu & kashmir': 'Jammu and Kashmir',
-            'jammu and kashmir': 'Jammu and Kashmir',
-            
-            # Odisha
+            'arunachal pradesh': 'Arunachal Pradesh',
+            'assam': 'Assam',
+            'bihar': 'Bihar',
+            'chhattisgarh': 'Chhattisgarh',
+            'goa': 'Goa',
+            'gujarat': 'Gujarat',
+            'haryana': 'Haryana',
+            'himachal pradesh': 'Himachal Pradesh',
+            'jharkhand': 'Jharkhand',
+            'karnataka': 'Karnataka',
+            'kerala': 'Kerala',
+            'madhya pradesh': 'Madhya Pradesh',
+            'maharashtra': 'Maharashtra',
+            'manipur': 'Manipur',
+            'meghalaya': 'Meghalaya',
+            'mizoram': 'Mizoram',
+            'nagaland': 'Nagaland',
             'odisha': 'Odisha',
-            'orissa': 'Odisha',
-            
-            # Puducherry
-            'pondicherry': 'Puducherry',
-            'puducherry': 'Puducherry',
-            
-            # West Bengal
+            'orissa': 'Odisha',  # Old name
+            'punjab': 'Punjab',
+            'rajasthan': 'Rajasthan',
+            'sikkim': 'Sikkim',
+            'tamil nadu': 'Tamil Nadu',
+            'tamilnadu': 'Tamil Nadu',
+            'telangana': 'Telangana',
+            'tripura': 'Tripura',
+            'uttar pradesh': 'Uttar Pradesh',
+            'uttarakhand': 'Uttarakhand',
+            'uttaranchal': 'Uttarakhand',  # Old name
             'west bengal': 'West Bengal',
             'west  bengal': 'West Bengal',
             'west bangal': 'West Bengal',
             'westbengal': 'West Bengal',
+            
+            # Union Territories (8)
+            'andaman and nicobar islands': 'Andaman and Nicobar Islands',
+            'andaman & nicobar islands': 'Andaman and Nicobar Islands',
+            'andaman and nicobar': 'Andaman and Nicobar Islands',
+            'chandigarh': 'Chandigarh',
+            'dadra and nagar haveli and daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'dadra and nagar haveli': 'Dadra and Nagar Haveli and Daman and Diu',
+            'dadra & nagar haveli': 'Dadra and Nagar Haveli and Daman and Diu',
+            'daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'daman & diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'the dadra and nagar haveli and daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'delhi': 'Delhi',
+            'delhi (national capital territory)': 'Delhi',
+            'national capital territory of delhi': 'Delhi',
+            'nct of delhi': 'Delhi',
+            'jammu and kashmir': 'Jammu and Kashmir',
+            'jammu & kashmir': 'Jammu and Kashmir',
+            'jammu and kashmir': 'Jammu and Kashmir',
+            'ladakh': 'Ladakh',
+            'lakshadweep': 'Lakshadweep',
+            'puducherry': 'Puducherry',
+            'pondicherry': 'Puducherry',  # Old name
         }
         
         # Apply mapping (case-insensitive)
         df['state_lower'] = df['state'].str.lower()
-        df['state'] = df['state_lower'].map(state_mapping).fillna(df['state'])
-        df = df.drop('state_lower', axis=1)
+        df['state'] = df['state_lower'].map(state_mapping)
         
-        # Title case for states not in mapping
-        df['state'] = df['state'].str.title()
+        # Remove rows where state couldn't be mapped (invalid states)
+        df = df[df['state'].notna()]
+        df = df.drop('state_lower', axis=1)
         
         # Calculate total enrolments
         df['total_enrolments'] = df['age_0_5'] + df['age_5_17'] + df['age_18_greater']
@@ -137,27 +162,65 @@ class AadhaarDataLoader:
     def clean_and_aggregate_updates(self, bio_df: pd.DataFrame, demo_df: pd.DataFrame) -> pd.DataFrame:
         """Clean and aggregate update data (biometric + demographic)"""
         
-        # State name standardization mapping
+        # Official list of 28 States + 8 UTs - Standardization mapping
         state_mapping = {
-            'andaman & nicobar islands': 'Andaman and Nicobar Islands',
-            'andaman and nicobar islands': 'Andaman and Nicobar Islands',
+            # States (28)
             'andhra pradesh': 'Andhra Pradesh',
-            'dadra & nagar haveli': 'Dadra and Nagar Haveli and Daman and Diu',
-            'dadra and nagar haveli': 'Dadra and Nagar Haveli and Daman and Diu',
-            'dadra and nagar haveli and daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
-            'the dadra and nagar haveli and daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
-            'daman & diu': 'Dadra and Nagar Haveli and Daman and Diu',
-            'daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
-            'jammu & kashmir': 'Jammu and Kashmir',
-            'jammu and kashmir': 'Jammu and Kashmir',
+            'arunachal pradesh': 'Arunachal Pradesh',
+            'assam': 'Assam',
+            'bihar': 'Bihar',
+            'chhattisgarh': 'Chhattisgarh',
+            'goa': 'Goa',
+            'gujarat': 'Gujarat',
+            'haryana': 'Haryana',
+            'himachal pradesh': 'Himachal Pradesh',
+            'jharkhand': 'Jharkhand',
+            'karnataka': 'Karnataka',
+            'kerala': 'Kerala',
+            'madhya pradesh': 'Madhya Pradesh',
+            'maharashtra': 'Maharashtra',
+            'manipur': 'Manipur',
+            'meghalaya': 'Meghalaya',
+            'mizoram': 'Mizoram',
+            'nagaland': 'Nagaland',
             'odisha': 'Odisha',
             'orissa': 'Odisha',
-            'pondicherry': 'Puducherry',
-            'puducherry': 'Puducherry',
+            'punjab': 'Punjab',
+            'rajasthan': 'Rajasthan',
+            'sikkim': 'Sikkim',
+            'tamil nadu': 'Tamil Nadu',
+            'tamilnadu': 'Tamil Nadu',
+            'telangana': 'Telangana',
+            'tripura': 'Tripura',
+            'uttar pradesh': 'Uttar Pradesh',
+            'uttarakhand': 'Uttarakhand',
+            'uttaranchal': 'Uttarakhand',
             'west bengal': 'West Bengal',
             'west  bengal': 'West Bengal',
             'west bangal': 'West Bengal',
             'westbengal': 'West Bengal',
+            
+            # Union Territories (8)
+            'andaman and nicobar islands': 'Andaman and Nicobar Islands',
+            'andaman & nicobar islands': 'Andaman and Nicobar Islands',
+            'andaman and nicobar': 'Andaman and Nicobar Islands',
+            'chandigarh': 'Chandigarh',
+            'dadra and nagar haveli and daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'dadra and nagar haveli': 'Dadra and Nagar Haveli and Daman and Diu',
+            'dadra & nagar haveli': 'Dadra and Nagar Haveli and Daman and Diu',
+            'daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'daman & diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'the dadra and nagar haveli and daman and diu': 'Dadra and Nagar Haveli and Daman and Diu',
+            'delhi': 'Delhi',
+            'delhi (national capital territory)': 'Delhi',
+            'national capital territory of delhi': 'Delhi',
+            'nct of delhi': 'Delhi',
+            'jammu and kashmir': 'Jammu and Kashmir',
+            'jammu & kashmir': 'Jammu and Kashmir',
+            'ladakh': 'Ladakh',
+            'lakshadweep': 'Lakshadweep',
+            'puducherry': 'Puducherry',
+            'pondicherry': 'Puducherry',
         }
         
         # Process biometric updates
@@ -173,9 +236,9 @@ class AadhaarDataLoader:
         
         # Apply mapping
         bio_df['state_lower'] = bio_df['state'].str.lower()
-        bio_df['state'] = bio_df['state_lower'].map(state_mapping).fillna(bio_df['state'])
+        bio_df['state'] = bio_df['state_lower'].map(state_mapping)
+        bio_df = bio_df[bio_df['state'].notna()]  # Remove unmapped states
         bio_df = bio_df.drop('state_lower', axis=1)
-        bio_df['state'] = bio_df['state'].str.title()
         
         bio_df['total_bio_updates'] = bio_df['bio_age_5_17'] + bio_df['bio_age_17_']
         
@@ -198,9 +261,9 @@ class AadhaarDataLoader:
         
         # Apply mapping
         demo_df['state_lower'] = demo_df['state'].str.lower()
-        demo_df['state'] = demo_df['state_lower'].map(state_mapping).fillna(demo_df['state'])
+        demo_df['state'] = demo_df['state_lower'].map(state_mapping)
+        demo_df = demo_df[demo_df['state'].notna()]  # Remove unmapped states
         demo_df = demo_df.drop('state_lower', axis=1)
-        demo_df['state'] = demo_df['state'].str.title()
         
         demo_df['total_demo_updates'] = demo_df['demo_age_5_17'] + demo_df['demo_age_17_']
         

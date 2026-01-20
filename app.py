@@ -47,27 +47,52 @@ def index():
 
 @app.route('/api/states', methods=['GET'])
 def get_states():
-    """Get list of available states"""
-    pred = initialize_predictor()
+    """Get list of available states - ONLY official 28 states + 8 UTs"""
     
-    # Get unique states and clean them
-    states = pred.master_data['state'].unique().tolist()
+    # Official list of 28 States + 8 UTs (hardcoded - no data dependency)
+    official_states = [
+        # States (28)
+        'Andhra Pradesh',
+        'Arunachal Pradesh',
+        'Assam',
+        'Bihar',
+        'Chhattisgarh',
+        'Goa',
+        'Gujarat',
+        'Haryana',
+        'Himachal Pradesh',
+        'Jharkhand',
+        'Karnataka',
+        'Kerala',
+        'Madhya Pradesh',
+        'Maharashtra',
+        'Manipur',
+        'Meghalaya',
+        'Mizoram',
+        'Nagaland',
+        'Odisha',
+        'Punjab',
+        'Rajasthan',
+        'Sikkim',
+        'Tamil Nadu',
+        'Telangana',
+        'Tripura',
+        'Uttar Pradesh',
+        'Uttarakhand',
+        'West Bengal',
+        # Union Territories (8)
+        'Andaman and Nicobar Islands',
+        'Chandigarh',
+        'Dadra and Nagar Haveli and Daman and Diu',
+        'Delhi',
+        'Jammu and Kashmir',
+        'Ladakh',
+        'Lakshadweep',
+        'Puducherry'
+    ]
     
-    # Filter out non-string values and clean
-    cleaned_states = []
-    for state in states:
-        # Only keep string values that look like state names
-        if isinstance(state, str) and len(state) > 2 and not state.isdigit():
-            # Remove any leading/trailing whitespace
-            cleaned_state = state.strip()
-            # Only add if not already in list (remove duplicates)
-            if cleaned_state not in cleaned_states:
-                cleaned_states.append(cleaned_state)
-    
-    # Sort alphabetically
-    cleaned_states.sort()
-    
-    return jsonify({'states': cleaned_states})
+    # Return only official states (already sorted)
+    return jsonify({'states': sorted(official_states)})
 
 @app.route('/api/predict', methods=['POST'])
 def predict_policy_impact():
