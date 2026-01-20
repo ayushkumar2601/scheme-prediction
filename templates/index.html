@@ -13,30 +13,33 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #ffffff;
+            background: #fafbfc;
             min-height: 100vh;
             padding: 0;
         }
 
         /* Header */
         .header {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            padding: 40px 20px;
+            background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%);
+            padding: 50px 20px;
             text-align: center;
-            border-bottom: 1px solid #90caf9;
+            border-bottom: 3px solid #0d47a1;
+            box-shadow: 0 4px 20px rgba(13, 71, 161, 0.15);
         }
 
         .header h1 {
-            font-size: 2.5em;
-            color: #1565c0;
-            margin-bottom: 10px;
-            font-weight: 700;
+            font-size: 2.8em;
+            color: #ffffff;
+            margin-bottom: 12px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
         }
 
         .header p {
-            font-size: 1.1em;
-            color: #1976d2;
+            font-size: 1.15em;
+            color: #e3f2fd;
             font-weight: 400;
+            letter-spacing: 0.3px;
         }
 
         /* Container */
@@ -56,20 +59,24 @@
 
         /* Input Panel */
         .input-panel {
-            background: #f5f9ff;
-            border: 1px solid #e3f2fd;
-            border-radius: 16px;
-            padding: 30px;
+            background: #ffffff;
+            border: 1px solid #e1e8ed;
+            border-radius: 20px;
+            padding: 35px;
             height: fit-content;
             position: sticky;
             top: 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
         }
 
         .input-panel h2 {
-            color: #1565c0;
-            font-size: 1.4em;
-            margin-bottom: 25px;
+            color: #0d47a1;
+            font-size: 1.5em;
+            margin-bottom: 30px;
             font-weight: 600;
+            letter-spacing: -0.3px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
         }
 
         /* Form Styles */
@@ -79,36 +86,40 @@
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             font-weight: 600;
-            color: #1976d2;
+            color: #1e3a5f;
             font-size: 0.95em;
+            letter-spacing: 0.2px;
         }
 
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #bbdefb;
-            border-radius: 10px;
+            padding: 13px 18px;
+            border: 1.5px solid #d1dce5;
+            border-radius: 12px;
             font-size: 1em;
-            background: white;
+            background: #fafbfc;
             transition: all 0.3s;
-            color: #333;
+            color: #1e3a5f;
+            font-weight: 500;
         }
 
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #42a5f5;
-            box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
+            border-color: #1565c0;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(21, 101, 192, 0.08);
         }
 
         .form-group small {
             display: block;
-            margin-top: 5px;
-            color: #64b5f6;
+            margin-top: 6px;
+            color: #6b7c93;
             font-size: 0.85em;
+            font-weight: 400;
         }
 
         /* Slider */
@@ -129,40 +140,44 @@
 
         .slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
-            background: #42a5f5;
+            background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(66, 165, 245, 0.4);
+            box-shadow: 0 3px 10px rgba(13, 71, 161, 0.3);
+            border: 2px solid #ffffff;
         }
 
         .slider-value {
             font-weight: 700;
-            color: #1976d2;
-            min-width: 50px;
+            color: #0d47a1;
+            min-width: 55px;
             text-align: right;
-            font-size: 1.1em;
+            font-size: 1.15em;
+            letter-spacing: -0.3px;
         }
 
         /* Button */
         .btn {
-            background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+            background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
             color: white;
-            padding: 16px 32px;
+            padding: 18px 32px;
             border: none;
-            border-radius: 12px;
-            font-size: 1.1em;
+            border-radius: 14px;
+            font-size: 1.05em;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             width: 100%;
-            box-shadow: 0 4px 12px rgba(66, 165, 245, 0.3);
+            box-shadow: 0 6px 20px rgba(13, 71, 161, 0.25);
+            letter-spacing: 0.3px;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(66, 165, 245, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(13, 71, 161, 0.35);
+            background: linear-gradient(135deg, #0d47a1 0%, #01579b 100%);
         }
 
         .btn:disabled {
@@ -219,17 +234,18 @@
 
         /* Bento Box Cards */
         .bento-card {
-            background: white;
-            border: 1px solid #e3f2fd;
-            border-radius: 16px;
-            padding: 24px;
+            background: #ffffff;
+            border: 1px solid #e1e8ed;
+            border-radius: 20px;
+            padding: 28px;
             transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
         }
 
         .bento-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(66, 165, 245, 0.15);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 32px rgba(13, 71, 161, 0.12);
+            border-color: #d1dce5;
         }
 
         .bento-card.large {
@@ -248,50 +264,50 @@
         .card-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 16px;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f0f4f8;
         }
 
         .card-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3em;
+            width: 10px;
+            height: 10px;
+            background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+            border-radius: 3px;
         }
 
         .card-title {
-            font-size: 0.9em;
-            color: #64b5f6;
+            font-size: 0.85em;
+            color: #6b7c93;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
 
         /* Card Value */
         .card-value {
-            font-size: 2.5em;
+            font-size: 2.8em;
             font-weight: 700;
-            color: #1565c0;
-            margin: 10px 0;
+            color: #0d47a1;
+            margin: 12px 0;
             line-height: 1;
+            letter-spacing: -1px;
         }
 
         .card-value.medium {
-            font-size: 1.8em;
+            font-size: 2em;
         }
 
         .card-value.small {
-            font-size: 1.4em;
+            font-size: 1.5em;
         }
 
         .card-subtitle {
-            color: #90caf9;
+            color: #6b7c93;
             font-size: 0.9em;
-            margin-top: 8px;
+            margin-top: 10px;
+            font-weight: 500;
         }
 
         /* Table Styles */
@@ -308,24 +324,26 @@
         }
 
         th {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            color: #1565c0;
-            padding: 16px;
+            background: #f8fafb;
+            color: #1e3a5f;
+            padding: 18px;
             text-align: left;
             font-weight: 600;
-            font-size: 0.9em;
+            font-size: 0.85em;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #e1e8ed;
         }
 
         td {
-            padding: 14px 16px;
-            border-bottom: 1px solid #f5f9ff;
-            color: #333;
+            padding: 16px 18px;
+            border-bottom: 1px solid #f0f4f8;
+            color: #1e3a5f;
+            font-weight: 500;
         }
 
         tr:hover {
-            background: #f5f9ff;
+            background: #fafbfc;
         }
 
         tr:last-child td {
@@ -438,32 +456,35 @@
         }
 
         .stat-label {
-            font-size: 0.85em;
-            color: #64b5f6;
-            margin-bottom: 8px;
+            font-size: 0.8em;
+            color: #6b7c93;
+            margin-bottom: 10px;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
         }
 
         .stat-value {
-            font-size: 1.5em;
+            font-size: 1.6em;
             font-weight: 700;
-            color: #1565c0;
+            color: #0d47a1;
+            letter-spacing: -0.5px;
         }
 
         .stat-value.enrol {
-            color: #1e88e5;
+            color: #1565c0;
         }
 
         .stat-value.update {
-            color: #5e35b1;
+            color: #4527a0;
         }
     </style>
 </head>
 <body>
     <!-- Header -->
     <div class="header">
-        <h1>🏛️ Aadhaar Policy Scenario Builder</h1>
-        <p>Define policy parameters and predict regional impact instantly</p>
+        <h1>Aadhaar Policy Scenario Builder</h1>
+        <p>Define policy parameters and predict regional impact with precision</p>
     </div>
 
     <!-- Main Container -->
@@ -471,7 +492,7 @@
         <div class="main-grid">
             <!-- Input Panel -->
             <div class="input-panel">
-                <h2>📋 Policy Parameters</h2>
+                <h2>Policy Parameters</h2>
                 
                 <form id="policyForm">
                     <div class="form-group">
@@ -531,7 +552,7 @@
                     </div>
 
                     <button type="submit" class="btn" id="predictBtn">
-                        🔮 Predict Impact
+                        Generate Prediction
                     </button>
                 </form>
 
@@ -551,7 +572,7 @@
                     <!-- Total People Affected - Large Card -->
                     <div class="bento-card large">
                         <div class="card-header">
-                            <div class="card-icon">👥</div>
+                            <div class="card-icon"></div>
                             <div class="card-title">Total People Affected</div>
                         </div>
                         <div class="card-value" id="totalAffected">-</div>
@@ -561,7 +582,7 @@
                     <!-- Peak Impact -->
                     <div class="bento-card">
                         <div class="card-header">
-                            <div class="card-icon">📈</div>
+                            <div class="card-icon"></div>
                             <div class="card-title">Peak Volume</div>
                         </div>
                         <div class="card-value medium" id="peakVolume">-</div>
@@ -571,7 +592,7 @@
                     <!-- Duration -->
                     <div class="bento-card">
                         <div class="card-header">
-                            <div class="card-icon">⏱️</div>
+                            <div class="card-icon"></div>
                             <div class="card-title">Duration</div>
                         </div>
                         <div class="card-value medium" id="duration">-</div>
@@ -581,7 +602,7 @@
                     <!-- Breakdown Card -->
                     <div class="bento-card large">
                         <div class="card-header">
-                            <div class="card-icon">📊</div>
+                            <div class="card-icon"></div>
                             <div class="card-title">Impact Breakdown</div>
                         </div>
                         <div class="stat-grid">
@@ -599,7 +620,7 @@
                     <!-- Regional Impact Table - Full Width -->
                     <div class="bento-card full">
                         <div class="card-header">
-                            <div class="card-icon">🗺️</div>
+                            <div class="card-icon"></div>
                             <div class="card-title">Regional Impact Analysis</div>
                         </div>
                         <div class="table-container">
@@ -623,7 +644,7 @@
                     <!-- Visualization - Full Width -->
                     <div class="bento-card full">
                         <div class="card-header">
-                            <div class="card-icon">📉</div>
+                            <div class="card-icon"></div>
                             <div class="card-title">Visual Analysis</div>
                         </div>
                         <img id="vizImage" src="" alt="Visualization" style="width: 100%; border-radius: 12px;">
