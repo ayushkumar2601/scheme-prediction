@@ -13,12 +13,20 @@ You now have a **complete, production-ready system** to predict how Aadhaar poli
 pip install -r requirements.txt
 ```
 
-### Step 2: Run Your First Prediction
-```bash
-python quick_start.py
+### Step 2: Add Your Policy Details
+Open `my_policy_prediction.py` and change these lines:
+```python
+MY_POLICY_DATE = "2025-04-01"  # ← Your policy date
+FORECAST_DAYS = 60             # ← How many days to forecast
+POLICY_NAME = "Your Policy Name"
 ```
 
-### Step 3: View Results
+### Step 3: Run Your Prediction
+```bash
+python my_policy_prediction.py
+```
+
+### Step 4: View Results
 You'll see output like:
 ```
 Total People Affected: 1,234,567
@@ -29,7 +37,11 @@ Peak Date: 2025-04-15
 Peak Volume: 45,678 people/day
 ```
 
-**That's it!** You just predicted a policy impact. 🎉
+Plus 6 generated files (report + visualizations)!
+
+**That's it!** You just predicted your policy impact. 🎉
+
+> **Need more help?** See [HOW_TO_ADD_POLICY.md](HOW_TO_ADD_POLICY.md) for detailed instructions
 
 ---
 
