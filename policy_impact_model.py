@@ -130,6 +130,15 @@ class PolicyImpactModel:
         df_impact['update_impact'] = df_impact['policy_updates'] - df_impact['baseline_updates']
         df_impact['total_impact'] = df_impact['enrolment_impact'] + df_impact['update_impact']
         
+        # DEBUG: Print sample predictions
+        print(f"\nDEBUG - Policy Impact Calculation:")
+        print(f"  Baseline enrolments (avg): {df_impact['baseline_enrolments'].mean():.2f}")
+        print(f"  Policy enrolments (avg): {df_impact['policy_enrolments'].mean():.2f}")
+        print(f"  Enrolment impact (avg): {df_impact['enrolment_impact'].mean():.2f}")
+        print(f"  Baseline updates (avg): {df_impact['baseline_updates'].mean():.2f}")
+        print(f"  Policy updates (avg): {df_impact['policy_updates'].mean():.2f}")
+        print(f"  Update impact (avg): {df_impact['update_impact'].mean():.2f}")
+        
         # Only consider positive impacts after policy date
         if 'policy_active' in df_impact.columns:
             df_impact.loc[df_impact['policy_active'] == 0, 'enrolment_impact'] = 0
