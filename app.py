@@ -17,6 +17,8 @@ import seaborn as sns
 
 from prediction_system import PolicyImpactPredictor
 from visualization import PolicyImpactVisualizer
+from export_utils import export_manager
+from flask import send_file
 
 app = Flask(__name__)
 
@@ -430,6 +432,95 @@ def generate_visualization():
         
     except Exception as e:
         print(f"Error generating visualization: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/export/pdf', methods=['POST'])
+def export_pdf():
+    """Export prediction results as PDF"""
+    try:
+        data = request.json
+        result_data = data.get('result_data')
+        policy_name = data.get('policy_name', 'Policy Report')
+        viz_image = data.get('viz_image')
+        
+        pdf_buffer = export_manager.export_to_pdf(result_data, policy_name, viz_image)
+        
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'policy_impact_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+        )
+    except Exception as e:
+        print(f"Error generating PDF: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/export/excel', methods=['POST'])
+def export_excel():
+    """Export prediction results as Excel"""
+    try:
+        data = request.json
+        result_data = data.get('result_data')
+        policy_name = data.get('policy_name', 'Policy Report')
+        
+        excel_buffer = export_manager.export_to_excel(result_data, policy_name)
+        
+        return send_file(
+            excel_buffer,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=f'policy_impact_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        )
+    except Exception as e:
+        print(f"Error generating Excel: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/export/csv', methods=['POST'])
+def export_csv():
+    """Export prediction results as CSV"""
+    try:
+        data = request.json
+        result_data = data.get('result_data')
+        
+        csv_buffer = export_manager.export_to_csv(result_data)
+        
+        return send_file(
+            csv_buffer,
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f'policy_impact_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        )
+    except Exception as e:
+        print(f"Error generating CSV: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/export/powerpoint', methods=['POST'])
+def export_powerpoint():
+    """Export prediction results as PowerPoint"""
+    try:
+        data = request.json
+        result_data = data.get('result_data')
+        policy_name = data.get('policy_name', 'Policy Report')
+        viz_image = data.get('viz_image')
+        
+        ppt_buffer = export_manager.export_to_powerpoint(result_data, policy_name, viz_image)
+        
+        return send_file(
+            ppt_buffer,
+            mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            as_attachment=True,
+            download_name=f'policy_impact_presentation_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pptx'
+        )
+    except Exception as e:
+        print(f"Error generating PowerPoint: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

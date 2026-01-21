@@ -478,6 +478,62 @@
         .stat-value.update {
             color: #4527a0;
         }
+
+        /* Export Buttons */
+        .export-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .export-btn {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafb 100%);
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            font-family: inherit;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(13, 71, 161, 0.15);
+            border-color: #1565c0;
+        }
+
+        .export-btn .btn-icon {
+            font-size: 2em;
+        }
+
+        .export-btn .btn-text {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #1e3a5f;
+        }
+
+        .export-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 1200px) {
+            .export-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .export-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -649,12 +705,42 @@
                         </div>
                         <img id="vizImage" src="" alt="Visualization" style="width: 100%; border-radius: 12px;">
                     </div>
+
+                    <!-- Export Options - Full Width -->
+                    <div class="bento-card full">
+                        <div class="card-header">
+                            <div class="card-icon"></div>
+                            <div class="card-title">Export Results</div>
+                        </div>
+                        <div class="export-buttons">
+                            <button class="export-btn pdf-btn" onclick="exportToPDF()">
+                                <span class="btn-icon">📄</span>
+                                <span class="btn-text">Download PDF Report</span>
+                            </button>
+                            <button class="export-btn excel-btn" onclick="exportToExcel()">
+                                <span class="btn-icon">📊</span>
+                                <span class="btn-text">Download Excel</span>
+                            </button>
+                            <button class="export-btn csv-btn" onclick="exportToCSV()">
+                                <span class="btn-icon">📋</span>
+                                <span class="btn-text">Download CSV</span>
+                            </button>
+                            <button class="export-btn ppt-btn" onclick="exportToPowerPoint()">
+                                <span class="btn-icon">📽️</span>
+                                <span class="btn-text">Download PowerPoint</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        // Global variable to store current results
+        let currentResults = null;
+        let currentPolicyName = '';
+        let currentVizImage = '';
         // Load states on page load
         fetch('/api/states')
             .then(response => response.json())
@@ -718,6 +804,10 @@
                 // Display results
                 displayResults(result);
 
+                // Store results for export
+                currentResults = result;
+                currentPolicyName = formData.policy_name;
+
                 // Generate visualization
                 generateVisualization(result);
 
@@ -780,9 +870,160 @@
                 
                 if (vizResult.success) {
                     document.getElementById('vizImage').src = vizResult.image;
+                    currentVizImage = vizResult.image;
                 }
             } catch (error) {
                 console.error('Visualization error:', error);
+            }
+        }
+
+        // Export Functions
+        async function exportToPDF() {
+            if (!currentResults) {
+                alert('Please generate predictions first');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/export/pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        result_data: currentResults,
+                        policy_name: currentPolicyName,
+                        viz_image: currentVizImage
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `policy_impact_report_${Date.now()}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    alert('Error generating PDF');
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting to PDF');
+            }
+        }
+
+        async function exportToExcel() {
+            if (!currentResults) {
+                alert('Please generate predictions first');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/export/excel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        result_data: currentResults,
+                        policy_name: currentPolicyName
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `policy_impact_data_${Date.now()}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    alert('Error generating Excel file');
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting to Excel');
+            }
+        }
+
+        async function exportToCSV() {
+            if (!currentResults) {
+                alert('Please generate predictions first');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/export/csv', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        result_data: currentResults
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `policy_impact_data_${Date.now()}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    alert('Error generating CSV file');
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting to CSV');
+            }
+        }
+
+        async function exportToPowerPoint() {
+            if (!currentResults) {
+                alert('Please generate predictions first');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/export/powerpoint', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        result_data: currentResults,
+                        policy_name: currentPolicyName,
+                        viz_image: currentVizImage
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `policy_impact_presentation_${Date.now()}.pptx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    alert('Error generating PowerPoint file');
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting to PowerPoint');
             }
         }
     </script>
