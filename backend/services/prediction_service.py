@@ -111,10 +111,10 @@ class PredictionService:
                     'policy_date': policy_dt,
                     'days_from_policy': days_from_policy,
                     'policy_active': 1 if date >= policy_dt else 0,
-                    # Add the missing policy features that the trained models expect
+                    # Add the policy features that the policy impact models expect
+                    'pre_policy_30d': 1 if days_from_policy >= -30 and days_from_policy < 0 else 0,
                     'post_policy_30d': 1 if days_from_policy <= 30 and days_from_policy >= 0 else 0,
                     'post_policy_60d': 1 if days_from_policy <= 60 and days_from_policy >= 0 else 0,
-                    'pre_policy_30d': 1 if days_from_policy >= -30 and days_from_policy < 0 else 0,
                 })
         
         forecast_df = pd.DataFrame(forecast_data)
@@ -142,10 +142,7 @@ class PredictionService:
         """Add historical lag and rolling features"""
         # Get expected feature columns from model loader
         models = self.models
-        expected_features = models['feature_columns']
-        
-        # For production, we'll use simplified features based on recent averages
-        # In a full implementation, you'd calculate these from historical data
+        policy_features = models.get('policy_features', models['feature_columns'])
         
         # Use state-based averages from historical data
         for state in df['state'].unique():
@@ -159,83 +156,43 @@ class PredictionService:
             
             state_mask = df['state'] == state
             
-            # Set lag features to recent averages
-            if 'total_enrolments_lag_1' in expected_features:
-                df.loc[state_mask, 'total_enrolments_lag_1'] = avg_enrolments
-            if 'total_enrolments_lag_7' in expected_features:
-                df.loc[state_mask, 'total_enrolments_lag_7'] = avg_enrolments
-            if 'total_enrolments_lag_30' in expected_features:
-                df.loc[state_mask, 'total_enrolments_lag_30'] = avg_enrolments
-            if 'total_updates_lag_1' in expected_features:
-                df.loc[state_mask, 'total_updates_lag_1'] = avg_updates
-            if 'total_updates_lag_7' in expected_features:
-                df.loc[state_mask, 'total_updates_lag_7'] = avg_updates
-            if 'total_updates_lag_30' in expected_features:
-                df.loc[state_mask, 'total_updates_lag_30'] = avg_updates
+            # Set lag features (1, 7, 14, 30 days)
+            for lag in [1, 7, 14, 30]:
+                if f'total_enrolments_lag_{lag}' in policy_features:
+                    df.loc[state_mask, f'total_enrolments_lag_{lag}'] = avg_enrolments
+                if f'total_updates_lag_{lag}' in policy_features:
+                    df.loc[state_mask, f'total_updates_lag_{lag}'] = avg_updates
             
-            # Set rolling averages
-            if 'total_enrolments_rolling_mean_7' in expected_features:
-                df.loc[state_mask, 'total_enrolments_rolling_mean_7'] = avg_enrolments
-            if 'total_enrolments_rolling_mean_30' in expected_features:
-                df.loc[state_mask, 'total_enrolments_rolling_mean_30'] = avg_enrolments
-            if 'total_updates_rolling_mean_7' in expected_features:
-                df.loc[state_mask, 'total_updates_rolling_mean_7'] = avg_updates
-            if 'total_updates_rolling_mean_30' in expected_features:
-                df.loc[state_mask, 'total_updates_rolling_mean_30'] = avg_updates
-            
-            # Set rolling standard deviations
-            if 'total_enrolments_rolling_std_7' in expected_features:
-                df.loc[state_mask, 'total_enrolments_rolling_std_7'] = avg_enrolments * 0.1
-            if 'total_enrolments_rolling_std_30' in expected_features:
-                df.loc[state_mask, 'total_enrolments_rolling_std_30'] = avg_enrolments * 0.15
-            if 'total_updates_rolling_std_7' in expected_features:
-                df.loc[state_mask, 'total_updates_rolling_std_7'] = avg_updates * 0.1
-            if 'total_updates_rolling_std_30' in expected_features:
-                df.loc[state_mask, 'total_updates_rolling_std_30'] = avg_updates * 0.15
+            # Set rolling mean and std features (7, 14, 30 days)
+            for window in [7, 14, 30]:
+                if f'total_enrolments_rolling_mean_{window}' in policy_features:
+                    df.loc[state_mask, f'total_enrolments_rolling_mean_{window}'] = avg_enrolments
+                if f'total_enrolments_rolling_std_{window}' in policy_features:
+                    df.loc[state_mask, f'total_enrolments_rolling_std_{window}'] = avg_enrolments * 0.1
+                if f'total_updates_rolling_mean_{window}' in policy_features:
+                    df.loc[state_mask, f'total_updates_rolling_mean_{window}'] = avg_updates
+                if f'total_updates_rolling_std_{window}' in policy_features:
+                    df.loc[state_mask, f'total_updates_rolling_std_{window}'] = avg_updates * 0.1
             
             # Set growth features
-            if 'enrolment_growth_1d' in expected_features:
-                df.loc[state_mask, 'enrolment_growth_1d'] = 0.02  # 2% growth
-            if 'update_growth_1d' in expected_features:
-                df.loc[state_mask, 'update_growth_1d'] = 0.01     # 1% growth
-            if 'enrolment_growth_7d' in expected_features:
-                df.loc[state_mask, 'enrolment_growth_7d'] = 0.05  # 5% weekly growth
-            if 'update_growth_7d' in expected_features:
-                df.loc[state_mask, 'update_growth_7d'] = 0.03     # 3% weekly growth
+            if 'total_enrolments_growth' in policy_features:
+                df.loc[state_mask, 'total_enrolments_growth'] = 0.02  # 2% growth
+            if 'total_enrolments_growth_7d' in policy_features:
+                df.loc[state_mask, 'total_enrolments_growth_7d'] = 0.05  # 5% weekly growth
+            if 'total_updates_growth' in policy_features:
+                df.loc[state_mask, 'total_updates_growth'] = 0.01  # 1% growth
+            if 'total_updates_growth_7d' in policy_features:
+                df.loc[state_mask, 'total_updates_growth_7d'] = 0.03  # 3% weekly growth
             
             # Set state-level features
-            if 'state_avg_enrolments' in expected_features:
+            if 'state_avg_enrolments' in policy_features:
                 df.loc[state_mask, 'state_avg_enrolments'] = avg_enrolments
-            if 'state_avg_updates' in expected_features:
+            if 'state_avg_updates' in policy_features:
                 df.loc[state_mask, 'state_avg_updates'] = avg_updates
-            if 'enrolment_deviation' in expected_features:
+            if 'enrolment_deviation' in policy_features:
                 df.loc[state_mask, 'enrolment_deviation'] = 0.0
-            if 'update_deviation' in expected_features:
+            if 'update_deviation' in policy_features:
                 df.loc[state_mask, 'update_deviation'] = 0.0
-            
-            # Set seasonal features
-            if 'seasonal_enrolment' in expected_features:
-                df.loc[state_mask, 'seasonal_enrolment'] = avg_enrolments * 1.1
-            if 'seasonal_update' in expected_features:
-                df.loc[state_mask, 'seasonal_update'] = avg_updates * 1.1
-            
-            # Set trend features
-            if 'trend_enrolment' in expected_features:
-                df.loc[state_mask, 'trend_enrolment'] = avg_enrolments * 1.05
-            if 'trend_update' in expected_features:
-                df.loc[state_mask, 'trend_update'] = avg_updates * 1.05
-            
-            # Set additional policy features
-            if 'policy_period_days' in expected_features:
-                df.loc[state_mask, 'policy_period_days'] = df.loc[state_mask, 'days_from_policy'].abs()
-            if 'policy_intensity' in expected_features:
-                df.loc[state_mask, 'policy_intensity'] = 0.5  # Medium intensity
-            if 'policy_momentum' in expected_features:
-                df.loc[state_mask, 'policy_momentum'] = 0.3  # Building momentum
-            if 'regional_policy_impact' in expected_features:
-                df.loc[state_mask, 'regional_policy_impact'] = 0.4  # Regional impact factor
-            if 'temporal_policy_effect' in expected_features:
-                df.loc[state_mask, 'temporal_policy_effect'] = 0.6  # Temporal effect
         
         return df
     
@@ -243,29 +200,27 @@ class PredictionService:
         """Generate baseline predictions without policy impact"""
         models = self.models
         
-        # Prepare features (exclude policy features for baseline)
-        feature_cols = [col for col in forecast_data.columns 
-                       if col not in ['date', 'state', 'policy_date'] 
-                       and 'policy' not in col.lower()]
+        # Get baseline features (exclude policy features)
+        baseline_features = models.get('baseline_features', models['feature_columns'])
         
-        X = forecast_data[feature_cols].fillna(0)
+        # Prepare features for baseline models (exclude policy features)
+        X = forecast_data.copy()
         
-        # Align features with trained models
-        X_aligned = self.model_loader.align_features(X)
+        # Align features with baseline model expectations
+        X_baseline = X.reindex(columns=baseline_features, fill_value=0)
         
         # Validate feature alignment before prediction
-        expected_features = len(models['feature_columns'])
-        if X_aligned.shape[1] != expected_features:
-            logger.warning(f"Feature mismatch: got {X_aligned.shape[1]}, expected {expected_features}")
-            # Force alignment using reindex
-            X_aligned = X_aligned.reindex(columns=models['feature_columns'], fill_value=0)
+        expected_features = len(baseline_features)
+        if X_baseline.shape[1] != expected_features:
+            logger.warning(f"Baseline feature mismatch: got {X_baseline.shape[1]}, expected {expected_features}")
+            X_baseline = X_baseline.reindex(columns=baseline_features, fill_value=0)
         
-        assert X_aligned.shape[1] == expected_features, \
-            f"Feature alignment failed: got {X_aligned.shape[1]}, expected {expected_features}"
+        assert X_baseline.shape[1] == expected_features, \
+            f"Baseline feature alignment failed: got {X_baseline.shape[1]}, expected {expected_features}"
         
         # Generate predictions
-        enrolment_pred = models['baseline_enrolment'].predict(X_aligned)
-        update_pred = models['baseline_update'].predict(X_aligned)
+        enrolment_pred = models['baseline_enrolment'].predict(X_baseline)
+        update_pred = models['baseline_update'].predict(X_baseline)
         
         return {
             'enrolments': enrolment_pred,
@@ -278,28 +233,27 @@ class PredictionService:
         """Generate policy-influenced predictions"""
         models = self.models
         
+        # Get policy features (includes all features including policy ones)
+        policy_features = models.get('policy_features', models['feature_columns'])
+        
         # Prepare all features including policy features
-        feature_cols = [col for col in forecast_data.columns 
-                       if col not in ['date', 'state', 'policy_date']]
+        X = forecast_data.copy()
         
-        X = forecast_data[feature_cols].fillna(0)
-        
-        # Align features with trained models
-        X_aligned = self.model_loader.align_features(X)
+        # Align features with policy model expectations
+        X_policy = X.reindex(columns=policy_features, fill_value=0)
         
         # Validate feature alignment before prediction
-        expected_features = len(models['feature_columns'])
-        if X_aligned.shape[1] != expected_features:
-            logger.warning(f"Feature mismatch: got {X_aligned.shape[1]}, expected {expected_features}")
-            # Force alignment using reindex
-            X_aligned = X_aligned.reindex(columns=models['feature_columns'], fill_value=0)
+        expected_features = len(policy_features)
+        if X_policy.shape[1] != expected_features:
+            logger.warning(f"Policy feature mismatch: got {X_policy.shape[1]}, expected {expected_features}")
+            X_policy = X_policy.reindex(columns=policy_features, fill_value=0)
         
-        assert X_aligned.shape[1] == expected_features, \
-            f"Feature alignment failed: got {X_aligned.shape[1]}, expected {expected_features}"
+        assert X_policy.shape[1] == expected_features, \
+            f"Policy feature alignment failed: got {X_policy.shape[1]}, expected {expected_features}"
         
         # Generate predictions
-        enrolment_pred = models['policy_enrolment'].predict(X_aligned)
-        update_pred = models['policy_update'].predict(X_aligned)
+        enrolment_pred = models['policy_enrolment'].predict(X_policy)
+        update_pred = models['policy_update'].predict(X_policy)
         
         return {
             'enrolments': enrolment_pred,

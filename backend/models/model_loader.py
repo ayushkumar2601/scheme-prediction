@@ -36,38 +36,7 @@ class ModelLoader:
             
             models = {}
             
-            # First, try to load feature columns from the actual trained models
-            feature_cols_path = os.path.join(self.model_path, 'policy_feature_cols.pkl')
-            if os.path.exists(feature_cols_path):
-                try:
-                    self._feature_columns = joblib.load(feature_cols_path)
-                    logger.info(f"Loaded feature columns from file: {len(self._feature_columns)} features")
-                except Exception as e:
-                    logger.warning(f"Failed to load feature columns file: {e}")
-                    self._feature_columns = None
-            
-            # If we couldn't load feature columns, try to get them from a trained model
-            if self._feature_columns is None:
-                baseline_enrolment_path = os.path.join(self.model_path, 'enrolment_baseline_model.pkl')
-                if os.path.exists(baseline_enrolment_path):
-                    try:
-                        temp_model = joblib.load(baseline_enrolment_path)
-                        if hasattr(temp_model, 'feature_names_in_'):
-                            self._feature_columns = list(temp_model.feature_names_in_)
-                            logger.info(f"Extracted feature columns from model: {len(self._feature_columns)} features")
-                        else:
-                            logger.warning("Model doesn't have feature_names_in_ attribute")
-                            self._feature_columns = self._get_default_feature_columns()
-                    except Exception as e:
-                        logger.warning(f"Failed to extract features from model: {e}")
-                        self._feature_columns = self._get_default_feature_columns()
-                else:
-                    self._feature_columns = self._get_default_feature_columns()
-                    logger.warning(f"Using default feature columns: {len(self._feature_columns)} features")
-            
-            models['feature_columns'] = self._feature_columns
-            
-            # Load baseline models
+            # Load baseline models first to get baseline features
             baseline_enrolment_path = os.path.join(self.model_path, 'enrolment_baseline_model.pkl')
             baseline_update_path = os.path.join(self.model_path, 'update_baseline_model.pkl')
             
@@ -75,37 +44,83 @@ class ModelLoader:
             policy_enrolment_path = os.path.join(self.model_path, 'enrolment_impact_model.pkl')
             policy_update_path = os.path.join(self.model_path, 'update_impact_model.pkl')
             
-            # Check if model files exist, if not use fallback models
+            # Get feature columns from the actual models
+            baseline_features = None
+            policy_features = None
+            
+            # Try to get baseline features
+            if os.path.exists(baseline_enrolment_path):
+                try:
+                    temp_model = joblib.load(baseline_enrolment_path)
+                    if hasattr(temp_model, 'feature_names_in_'):
+                        baseline_features = list(temp_model.feature_names_in_)
+                        logger.info(f"Extracted baseline features: {len(baseline_features)} features")
+                except Exception as e:
+                    logger.warning(f"Failed to extract baseline features: {e}")
+            
+            # Try to get policy features
+            if os.path.exists(policy_enrolment_path):
+                try:
+                    temp_model = joblib.load(policy_enrolment_path)
+                    if hasattr(temp_model, 'feature_names_in_'):
+                        policy_features = list(temp_model.feature_names_in_)
+                        logger.info(f"Extracted policy features: {len(policy_features)} features")
+                except Exception as e:
+                    logger.warning(f"Failed to extract policy features: {e}")
+            
+            # Store both feature sets
+            if baseline_features:
+                self._baseline_features = baseline_features
+            else:
+                self._baseline_features = self._get_default_feature_columns()
+                
+            if policy_features:
+                self._policy_features = policy_features
+            else:
+                # Policy features = baseline features + policy-specific features
+                self._policy_features = self._baseline_features + [
+                    'policy_active', 'days_from_policy', 'pre_policy_30d', 
+                    'post_policy_30d', 'post_policy_60d'
+                ]
+            
+            # Use policy features as the main feature set (superset)
+            self._feature_columns = self._policy_features
+            models['feature_columns'] = self._feature_columns
+            models['baseline_features'] = self._baseline_features
+            models['policy_features'] = self._policy_features
+            
+            # Load models
             if os.path.exists(baseline_enrolment_path):
                 models['baseline_enrolment'] = joblib.load(baseline_enrolment_path)
                 logger.info("Loaded baseline enrolment model")
             else:
-                models['baseline_enrolment'] = self._create_fallback_model()
+                models['baseline_enrolment'] = self._create_fallback_model(self._baseline_features)
                 logger.warning("Using fallback baseline enrolment model")
             
             if os.path.exists(baseline_update_path):
                 models['baseline_update'] = joblib.load(baseline_update_path)
                 logger.info("Loaded baseline update model")
             else:
-                models['baseline_update'] = self._create_fallback_model()
+                models['baseline_update'] = self._create_fallback_model(self._baseline_features)
                 logger.warning("Using fallback baseline update model")
             
             if os.path.exists(policy_enrolment_path):
                 models['policy_enrolment'] = joblib.load(policy_enrolment_path)
                 logger.info("Loaded policy enrolment model")
             else:
-                models['policy_enrolment'] = self._create_fallback_model()
+                models['policy_enrolment'] = self._create_fallback_model(self._policy_features)
                 logger.warning("Using fallback policy enrolment model")
             
             if os.path.exists(policy_update_path):
                 models['policy_update'] = joblib.load(policy_update_path)
                 logger.info("Loaded policy update model")
             else:
-                models['policy_update'] = self._create_fallback_model()
+                models['policy_update'] = self._create_fallback_model(self._policy_features)
                 logger.warning("Using fallback policy update model")
             
             logger.info("Models loaded successfully")
-            logger.info(f"Feature columns count: {len(self._feature_columns)}")
+            logger.info(f"Baseline features count: {len(self._baseline_features)}")
+            logger.info(f"Policy features count: {len(self._policy_features)}")
             
             return models
             
@@ -114,7 +129,7 @@ class ModelLoader:
             # Return fallback models to prevent service failure
             return self._create_fallback_models()
     
-    def _create_fallback_model(self):
+    def _create_fallback_model(self, features=None):
         """Create a simple fallback model for when trained models are not available"""
         from sklearn.ensemble import GradientBoostingRegressor
         
@@ -128,7 +143,9 @@ class ModelLoader:
         
         # Train on dummy data with correct feature count
         import numpy as np
-        feature_count = len(self._feature_columns) if self._feature_columns else 34
+        if features is None:
+            features = self._get_default_feature_columns()
+        feature_count = len(features)
         X_dummy = np.random.rand(100, feature_count)
         y_dummy = np.random.rand(100) * 1000
         model.fit(X_dummy, y_dummy)
@@ -140,37 +157,43 @@ class ModelLoader:
         logger.warning("Creating fallback models")
         
         # Ensure feature columns are set
-        if self._feature_columns is None:
-            self._feature_columns = self._get_default_feature_columns()
+        if not hasattr(self, '_baseline_features'):
+            self._baseline_features = self._get_default_feature_columns()
+        if not hasattr(self, '_policy_features'):
+            self._policy_features = self._baseline_features + [
+                'policy_active', 'days_from_policy', 'pre_policy_30d', 
+                'post_policy_30d', 'post_policy_60d'
+            ]
+        if not hasattr(self, '_feature_columns'):
+            self._feature_columns = self._policy_features
         
         return {
-            'baseline_enrolment': self._create_fallback_model(),
-            'baseline_update': self._create_fallback_model(),
-            'policy_enrolment': self._create_fallback_model(),
-            'policy_update': self._create_fallback_model(),
-            'feature_columns': self._feature_columns
+            'baseline_enrolment': self._create_fallback_model(self._baseline_features),
+            'baseline_update': self._create_fallback_model(self._baseline_features),
+            'policy_enrolment': self._create_fallback_model(self._policy_features),
+            'policy_update': self._create_fallback_model(self._policy_features),
+            'feature_columns': self._feature_columns,
+            'baseline_features': self._baseline_features,
+            'policy_features': self._policy_features
         }
     
     def _get_default_feature_columns(self) -> List[str]:
         """Get default feature columns matching the trained models"""
+        # These are the EXACT features the trained baseline model expects
         return [
             'year', 'month', 'day', 'day_of_week', 'week_of_year', 'is_weekend',
-            'days_from_policy', 'policy_active',
-            'post_policy_30d', 'post_policy_60d', 'pre_policy_30d',
-            'total_enrolments_lag_1', 'total_enrolments_lag_7', 'total_enrolments_lag_30',
-            'total_updates_lag_1', 'total_updates_lag_7', 'total_updates_lag_30',
-            'total_enrolments_rolling_mean_7', 'total_enrolments_rolling_mean_30',
-            'total_updates_rolling_mean_7', 'total_updates_rolling_mean_30',
-            'enrolment_growth_1d', 'update_growth_1d',
-            'total_enrolments_rolling_std_7', 'total_enrolments_rolling_std_30',
-            'total_updates_rolling_std_7', 'total_updates_rolling_std_30',
-            'enrolment_growth_7d', 'update_growth_7d',
+            'total_enrolments_lag_1', 'total_enrolments_lag_7', 'total_enrolments_lag_14', 'total_enrolments_lag_30',
+            'total_updates_lag_1', 'total_updates_lag_7', 'total_updates_lag_14', 'total_updates_lag_30',
+            'total_enrolments_rolling_mean_7', 'total_enrolments_rolling_std_7',
+            'total_enrolments_rolling_mean_14', 'total_enrolments_rolling_std_14',
+            'total_enrolments_rolling_mean_30', 'total_enrolments_rolling_std_30',
+            'total_updates_rolling_mean_7', 'total_updates_rolling_std_7',
+            'total_updates_rolling_mean_14', 'total_updates_rolling_std_14',
+            'total_updates_rolling_mean_30', 'total_updates_rolling_std_30',
+            'total_enrolments_growth', 'total_enrolments_growth_7d',
+            'total_updates_growth', 'total_updates_growth_7d',
             'state_avg_enrolments', 'state_avg_updates',
-            'enrolment_deviation', 'update_deviation',
-            'seasonal_enrolment', 'seasonal_update',
-            'trend_enrolment', 'trend_update',
-            'policy_period_days', 'policy_intensity', 'policy_momentum',
-            'regional_policy_impact', 'temporal_policy_effect'
+            'enrolment_deviation', 'update_deviation'
         ]
     
     def align_features(self, X: pd.DataFrame) -> pd.DataFrame:
@@ -266,18 +289,33 @@ class ModelLoader:
         """
         try:
             models = self.load_models()
-            feature_columns = models['feature_columns']
+            baseline_features = models.get('baseline_features', models['feature_columns'])
+            policy_features = models.get('policy_features', models['feature_columns'])
             
-            # Create test input with correct feature structure
-            test_input = pd.DataFrame([[0] * len(feature_columns)], columns=feature_columns)
+            logger.info(f"Testing models - Baseline: {len(baseline_features)} features, Policy: {len(policy_features)} features")
             
-            logger.info(f"Testing models with {len(feature_columns)} features")
+            # Test baseline models with baseline features
+            baseline_test_input = pd.DataFrame([[0] * len(baseline_features)], columns=baseline_features)
             
-            # Test each model with properly structured dummy data
-            for model_name, model in models.items():
-                if model_name != 'feature_columns':
+            for model_name in ['baseline_enrolment', 'baseline_update']:
+                if model_name in models:
                     try:
-                        pred = model.predict(test_input)
+                        pred = models[model_name].predict(baseline_test_input)
+                        if not isinstance(pred, np.ndarray) or len(pred) != 1:
+                            logger.error(f"Model {model_name} prediction test failed")
+                            return False
+                        logger.debug(f"Model {model_name} test passed")
+                    except Exception as e:
+                        logger.error(f"Model {model_name} test failed: {str(e)}")
+                        return False
+            
+            # Test policy models with policy features
+            policy_test_input = pd.DataFrame([[0] * len(policy_features)], columns=policy_features)
+            
+            for model_name in ['policy_enrolment', 'policy_update']:
+                if model_name in models:
+                    try:
+                        pred = models[model_name].predict(policy_test_input)
                         if not isinstance(pred, np.ndarray) or len(pred) != 1:
                             logger.error(f"Model {model_name} prediction test failed")
                             return False
