@@ -14,7 +14,7 @@ try:
     SUPABASE_AVAILABLE = True
 except ImportError:
     SUPABASE_AVAILABLE = False
-    logging.warning("Supabase client not available. Database features will be disabled.")
+    # Don't log warning here, do it only when actually trying to use it
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,8 @@ class DatabaseService:
         self.client = None
         if SUPABASE_AVAILABLE:
             self._initialize_client()
+        else:
+            logger.info("Supabase not available - database features disabled")
     
     def _initialize_client(self):
         """Initialize Supabase client"""
@@ -110,7 +112,7 @@ class DatabaseService:
             Prediction ID if successful, None otherwise
         """
         if not self.client:
-            logger.warning("Database client not available - cannot store prediction")
+            logger.debug("Database client not available - cannot store prediction")
             return None
         
         try:

@@ -17,13 +17,13 @@ def test_model_loading():
         loader = ModelLoader()
         models = loader.load_models()
         
-        print(f"✓ Models loaded successfully")
+        print("+ Models loaded successfully")
         
         baseline_features = models.get('baseline_features', [])
         policy_features = models.get('policy_features', [])
         
-        print(f"✓ Baseline features count: {len(baseline_features)}")
-        print(f"✓ Policy features count: {len(policy_features)}")
+        print(f"+ Baseline features count: {len(baseline_features)}")
+        print(f"+ Policy features count: {len(policy_features)}")
         
         # Show first few features
         print("First 5 baseline features:", baseline_features[:5])
@@ -31,11 +31,11 @@ def test_model_loading():
         
         # Test model predictions
         test_status = loader.test_models()
-        print(f"✓ Model testing: {'PASSED' if test_status else 'FAILED'}")
+        print(f"+ Model testing: {'PASSED' if test_status else 'FAILED'}")
         
         return test_status
     except Exception as e:
-        print(f"✗ Model loading failed: {str(e)}")
+        print(f"- Model loading failed: {str(e)}")
         import traceback
         traceback.print_exc()
         return False
@@ -55,14 +55,14 @@ def test_prediction_service():
             compliance_level=0.8
         )
         
-        print(f"✓ Prediction service works")
-        print(f"✓ Total people affected: {result['summary']['total_people_affected']:,}")
-        print(f"✓ Daily impact entries: {len(result['daily_impact'])}")
-        print(f"✓ Regional impact states: {len(result['regional_impact']['by_state'])}")
+        print("+ Prediction service works")
+        print(f"+ Total people affected: {result['summary']['total_people_affected']:,}")
+        print(f"+ Daily impact entries: {len(result['daily_impact'])}")
+        print(f"+ Regional impact states: {len(result['regional_impact']['by_state'])}")
         
         return True
     except Exception as e:
-        print(f"✗ Prediction service failed: {str(e)}")
+        print(f"- Prediction service failed: {str(e)}")
         import traceback
         traceback.print_exc()
         return False
@@ -76,14 +76,14 @@ def test_flask_app():
         with app.test_client() as client:
             # Test root endpoint
             response = client.get('/')
-            print(f"✓ Root endpoint: {response.status_code}")
+            print(f"+ Root endpoint: {response.status_code}")
             if response.status_code == 200:
                 data = response.get_json()
                 print(f"  Service: {data.get('service', 'Unknown')}")
             
             # Test health endpoint
             response = client.get('/health')
-            print(f"✓ Health endpoint: {response.status_code}")
+            print(f"+ Health endpoint: {response.status_code}")
             if response.status_code == 200:
                 data = response.get_json()
                 print(f"  Status: {data.get('status')}")
@@ -92,7 +92,7 @@ def test_flask_app():
             
             # Test states endpoint
             response = client.get('/api/states')
-            print(f"✓ States endpoint: {response.status_code}")
+            print(f"+ States endpoint: {response.status_code}")
             if response.status_code == 200:
                 data = response.get_json()
                 print(f"  States count: {len(data.get('states', []))}")
@@ -106,11 +106,11 @@ def test_flask_app():
             response = client.post('/api/predict', 
                                  data=json.dumps(prediction_data),
                                  content_type='application/json')
-            print(f"✓ Prediction endpoint: {response.status_code}")
+            print(f"+ Prediction endpoint: {response.status_code}")
             if response.status_code == 200:
                 data = response.get_json()
                 if data.get('success'):
-                    print(f"  Prediction successful")
+                    print("  Prediction successful")
                     print(f"  Total affected: {data['results']['summary']['total_people_affected']:,}")
                 else:
                     print(f"  Prediction failed: {data.get('error')}")
@@ -119,7 +119,7 @@ def test_flask_app():
         
         return True
     except Exception as e:
-        print(f"✗ Flask app test failed: {str(e)}")
+        print(f"- Flask app test failed: {str(e)}")
         import traceback
         traceback.print_exc()
         return False
@@ -143,17 +143,17 @@ def main():
             result = test()
             results.append(result)
         except Exception as e:
-            print(f"✗ Test failed with exception: {str(e)}")
+            print(f"- Test failed with exception: {str(e)}")
             results.append(False)
     
     print(f"\n=== Test Results ===")
     print(f"Passed: {sum(results)}/{len(results)}")
     
     if all(results):
-        print("🎉 All tests passed! Backend is ready for deployment.")
+        print("SUCCESS: All tests passed! Backend is ready for deployment.")
         return 0
     else:
-        print("❌ Some tests failed. Check the errors above.")
+        print("FAILED: Some tests failed. Check the errors above.")
         return 1
 
 if __name__ == "__main__":

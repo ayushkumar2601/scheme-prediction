@@ -66,6 +66,21 @@ def create_app():
                 "timestamp": datetime.utcnow().isoformat()
             }), 500
     
+    # Root route for Render health checks and browser visits
+    @app.route('/')
+    def home():
+        """Root endpoint for service identification"""
+        return jsonify({
+            "service": "Aadhaar Policy Impact Prediction API",
+            "status": "running",
+            "version": "1.0.0",
+            "endpoints": {
+                "health": "/health",
+                "predict": "/api/predict",
+                "states": "/api/states"
+            }
+        })
+    
     # Global error handler
     @app.errorhandler(Exception)
     def handle_error(error):
@@ -92,23 +107,7 @@ def get_database_service():
     return DatabaseService()
 
 # Create app instance
-# Create app instance
 app = create_app()
-
-# Add root route for Render health checks and browser visits
-@app.route('/')
-def home():
-    """Root endpoint for service identification"""
-    return jsonify({
-        "service": "Aadhaar Policy Impact Prediction API",
-        "status": "running",
-        "version": "1.0.0",
-        "endpoints": {
-            "health": "/health",
-            "predict": "/api/predict",
-            "states": "/api/states"
-        }
-    })
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 10000))

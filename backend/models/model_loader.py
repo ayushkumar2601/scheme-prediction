@@ -145,10 +145,16 @@ class ModelLoader:
         import numpy as np
         if features is None:
             features = self._get_default_feature_columns()
+        
         feature_count = len(features)
         X_dummy = np.random.rand(100, feature_count)
         y_dummy = np.random.rand(100) * 1000
-        model.fit(X_dummy, y_dummy)
+        
+        # Create DataFrame with proper feature names to avoid warnings
+        import pandas as pd
+        X_dummy_df = pd.DataFrame(X_dummy, columns=features)
+        
+        model.fit(X_dummy_df, y_dummy)
         
         return model
     
