@@ -1,38 +1,51 @@
 """
 Model Loader for Aadhaar Policy Impact Prediction System
-Handles loading and caching of trained ML models
+Handles loading and caching of trained ML models with proper feature alignment
 """
 
 import os
 import pandas as pd
+import numpy as np
 import joblib
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 import logging
 from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
 class ModelLoader:
-    """Handles loading and caching of ML models"""
+    """Handles loading and caching of ML models with feature alignment"""
     
     def __init__(self):
         self.model_path = os.getenv('MODEL_PATH', 'data/models')
         self.data_path = os.getenv('DATA_PATH', '.')
         self._models = None
         self._master_data = None
+        self._feature_columns = None
     
     @lru_cache(maxsize=1)
     def load_models(self) -> Dict:
         """
-        Load all trained models with caching
+        Load all trained models with caching and feature column alignment
         
         Returns:
-            Dictionary containing all loaded models
+            Dictionary containing all loaded models and feature columns
         """
         try:
             logger.info("Loading ML models...")
             
             models = {}
+            
+            # First, load feature columns
+            feature_cols_path = os.path.join(self.model_path, 'policy_feature_cols.pkl')
+            if os.path.exists(feature_cols_path):
+                self._feature_columns = joblib.load(feature_cols_path)
+                logger.info(f"Loaded feature columns: {len(self._feature_columns)} features")
+            else:
+                self._feature_columns = self._get_default_feature_columns()
+                logger.warning(f"Using default feature columns: {len(self._feature_columns)} features")
+            
+            models['feature_columns'] = self._feature_columns
             
             # Load baseline models
             baseline_enrolment_path = os.path.join(self.model_path, 'enrolment_baseline_model.pkl')
@@ -71,16 +84,9 @@ class ModelLoader:
                 models['policy_update'] = self._create_fallback_model()
                 logger.warning("Using fallback policy update model")
             
-            # Load feature columns if available
-            feature_cols_path = os.path.join(self.model_path, 'policy_feature_cols.pkl')
-            if os.path.exists(feature_cols_path):
-                models['feature_columns'] = joblib.load(feature_cols_path)
-                logger.info("Loaded feature columns")
-            else:
-                models['feature_columns'] = self._get_default_feature_columns()
-                logger.warning("Using default feature columns")
+            logger.info("Models loaded successfully")
+            logger.info(f"Feature columns count: {len(self._feature_columns)}")
             
-            logger.info("All models loaded successfully")
             return models
             
         except Exception as e:
@@ -92,7 +98,7 @@ class ModelLoader:
         """Create a simple fallback model for when trained models are not available"""
         from sklearn.ensemble import GradientBoostingRegressor
         
-        # Create a simple model with default parameters
+        # Create a model with default parameters
         model = GradientBoostingRegressor(
             n_estimators=50,
             learning_rate=0.1,
@@ -100,9 +106,10 @@ class ModelLoader:
             random_state=42
         )
         
-        # Train on dummy data to make it functional
+        # Train on dummy data with correct feature count
         import numpy as np
-        X_dummy = np.random.rand(100, 10)
+        feature_count = len(self._feature_columns) if self._feature_columns else 34
+        X_dummy = np.random.rand(100, feature_count)
         y_dummy = np.random.rand(100) * 1000
         model.fit(X_dummy, y_dummy)
         
@@ -112,16 +119,20 @@ class ModelLoader:
         """Create fallback models when loading fails"""
         logger.warning("Creating fallback models")
         
+        # Ensure feature columns are set
+        if self._feature_columns is None:
+            self._feature_columns = self._get_default_feature_columns()
+        
         return {
             'baseline_enrolment': self._create_fallback_model(),
             'baseline_update': self._create_fallback_model(),
             'policy_enrolment': self._create_fallback_model(),
             'policy_update': self._create_fallback_model(),
-            'feature_columns': self._get_default_feature_columns()
+            'feature_columns': self._feature_columns
         }
     
-    def _get_default_feature_columns(self) -> list:
-        """Get default feature columns"""
+    def _get_default_feature_columns(self) -> List[str]:
+        """Get default feature columns matching the trained models"""
         return [
             'year', 'month', 'day', 'day_of_week', 'week_of_year', 'is_weekend',
             'days_from_policy', 'policy_active',
@@ -129,8 +140,44 @@ class ModelLoader:
             'total_updates_lag_1', 'total_updates_lag_7', 'total_updates_lag_30',
             'total_enrolments_rolling_mean_7', 'total_enrolments_rolling_mean_30',
             'total_updates_rolling_mean_7', 'total_updates_rolling_mean_30',
-            'enrolment_growth_1d', 'update_growth_1d'
+            'enrolment_growth_1d', 'update_growth_1d',
+            'total_enrolments_rolling_std_7', 'total_enrolments_rolling_std_30',
+            'total_updates_rolling_std_7', 'total_updates_rolling_std_30',
+            'enrolment_growth_7d', 'update_growth_7d',
+            'state_avg_enrolments', 'state_avg_updates',
+            'enrolment_deviation', 'update_deviation',
+            'seasonal_enrolment', 'seasonal_update',
+            'trend_enrolment', 'trend_update'
         ]
+    
+    def align_features(self, X: pd.DataFrame) -> pd.DataFrame:
+        """
+        Align input features with trained model expectations
+        
+        Args:
+            X: Input DataFrame with features
+            
+        Returns:
+            DataFrame with properly aligned features
+        """
+        if self._feature_columns is None:
+            # Load feature columns if not already loaded
+            models = self.load_models()
+            self._feature_columns = models['feature_columns']
+        
+        # Log current shape
+        logger.debug(f"Input features shape: {X.shape}")
+        logger.debug(f"Expected features: {len(self._feature_columns)}")
+        
+        # Reindex to match expected features, filling missing with 0
+        X_aligned = X.reindex(columns=self._feature_columns, fill_value=0)
+        
+        # Validate alignment
+        assert X_aligned.shape[1] == len(self._feature_columns), \
+            f"Feature alignment failed: got {X_aligned.shape[1]}, expected {len(self._feature_columns)}"
+        
+        logger.debug(f"Aligned features shape: {X_aligned.shape}")
+        return X_aligned
     
     @lru_cache(maxsize=1)
     def load_master_data(self) -> pd.DataFrame:
@@ -189,23 +236,31 @@ class ModelLoader:
     
     def test_models(self) -> bool:
         """
-        Test if models can be loaded and used for prediction
+        Test if models can be loaded and used for prediction with proper feature alignment
         
         Returns:
             True if models are working, False otherwise
         """
         try:
             models = self.load_models()
+            feature_columns = models['feature_columns']
             
-            # Test each model with dummy data
-            import numpy as np
-            X_test = np.random.rand(1, len(models['feature_columns']))
+            # Create test input with correct feature structure
+            test_input = pd.DataFrame([[0] * len(feature_columns)], columns=feature_columns)
             
+            logger.info(f"Testing models with {len(feature_columns)} features")
+            
+            # Test each model with properly structured dummy data
             for model_name, model in models.items():
                 if model_name != 'feature_columns':
-                    pred = model.predict(X_test)
-                    if not isinstance(pred, np.ndarray) or len(pred) != 1:
-                        logger.error(f"Model {model_name} prediction test failed")
+                    try:
+                        pred = model.predict(test_input)
+                        if not isinstance(pred, np.ndarray) or len(pred) != 1:
+                            logger.error(f"Model {model_name} prediction test failed")
+                            return False
+                        logger.debug(f"Model {model_name} test passed")
+                    except Exception as e:
+                        logger.error(f"Model {model_name} test failed: {str(e)}")
                         return False
             
             logger.info("All models passed testing")

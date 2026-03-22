@@ -47,10 +47,15 @@ def create_app():
             model_loader = ModelLoader()
             models_status = model_loader.test_models()
             
+            # Get feature count
+            models = model_loader.load_models()
+            feature_count = len(models.get('feature_columns', []))
+            
             return jsonify({
                 "status": "ok",
                 "database": "connected" if db_status else "disconnected",
                 "models": "loaded" if models_status else "error",
+                "features": feature_count,
                 "timestamp": datetime.utcnow().isoformat()
             })
         except Exception as e:
@@ -87,7 +92,23 @@ def get_database_service():
     return DatabaseService()
 
 # Create app instance
+# Create app instance
 app = create_app()
+
+# Add root route for Render health checks and browser visits
+@app.route('/')
+def home():
+    """Root endpoint for service identification"""
+    return jsonify({
+        "service": "Aadhaar Policy Impact Prediction API",
+        "status": "running",
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "/health",
+            "predict": "/api/predict",
+            "states": "/api/states"
+        }
+    })
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 10000))
