@@ -9,6 +9,12 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import logging
 from functools import lru_cache
+import warnings
+
+# Suppress compatibility warnings
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings('ignore', message='.*ComplexWarning.*')
 
 from models.model_loader import ModelLoader
 

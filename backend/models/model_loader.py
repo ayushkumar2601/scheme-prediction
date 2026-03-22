@@ -10,6 +10,23 @@ import joblib
 from typing import Dict, Optional, List
 import logging
 from functools import lru_cache
+import warnings
+
+# Suppress NumPy compatibility warnings
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings('ignore', message='.*ComplexWarning.*')
+
+# Handle NumPy compatibility issues
+try:
+    from numpy.core.numeric import ComplexWarning
+except ImportError:
+    # For newer NumPy versions, ComplexWarning might be in a different location
+    try:
+        from numpy import ComplexWarning
+    except ImportError:
+        # If ComplexWarning doesn't exist, create a dummy class
+        class ComplexWarning(UserWarning):
+            pass
 
 logger = logging.getLogger(__name__)
 

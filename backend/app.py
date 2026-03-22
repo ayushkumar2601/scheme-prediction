@@ -3,6 +3,16 @@ Production Flask API for Aadhaar Policy Impact Prediction System
 Backend service for Render deployment
 """
 
+# Apply compatibility fixes first
+try:
+    from compatibility_fix import apply_compatibility_fixes
+    apply_compatibility_fixes()
+except ImportError:
+    # Fallback compatibility fixes
+    import warnings
+    warnings.filterwarnings('ignore', category=FutureWarning)
+    warnings.filterwarnings('ignore', message='.*ComplexWarning.*')
+
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
