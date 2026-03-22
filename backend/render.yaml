@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: aadhaar-ml-api
+    runtime: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+    plan: starter
+    region: oregon
+    branch: main
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MODEL_PATH
+        value: data/models
+      - key: DATA_PATH
+        value: .
+      - key: MAX_FORECAST_DAYS
+        value: 365
+      - key: DEFAULT_FORECAST_DAYS
+        value: 60
+      - key: LOG_LEVEL
+        value: INFO
+      - key: CACHE_TIMEOUT
+        value: 3600
+      - key: RATE_LIMIT
+        value: 60
