@@ -34,15 +34,25 @@ def create_app():
     """Application factory"""
     app = Flask(__name__)
     
-    # Enable CORS for Vercel frontend
-    CORS(app, origins=[
-        "http://localhost:3000",  # Local development
-        "https://*.vercel.app",   # Vercel deployments
-        os.getenv("FRONTEND_URL", "")  # Production frontend
-    ])
+    # Enable CORS for all origins (more permissive for deployment)
+    CORS(app, 
+         origins=["*"],  # Allow all origins for now
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization", "Accept"],
+         supports_credentials=False)
     
     # Register blueprints
     app.register_blueprint(api_bp, url_prefix='/api')
+    
+    # Handle preflight OPTIONS requests
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = jsonify({})
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,Accept")
+            response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
+            return response
     
     # Health check endpoint (required by Render)
     @app.route('/health')
@@ -98,10 +108,20 @@ def create_app():
         logger.error(f"Unhandled error: {str(error)}")
         logger.error(traceback.format_exc())
         
-        return jsonify({
+        response = jsonify({
             "error": "Internal server error",
             "message": str(error) if app.debug else "An unexpected error occurred"
-        }), 500
+        })
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response, 500
+    
+    # Add CORS headers to all responses
+    @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        return response
     
     return app
 
