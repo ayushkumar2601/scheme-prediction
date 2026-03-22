@@ -104,12 +104,17 @@ class PredictionService:
         forecast_data = []
         for state in available_states:
             for date in forecast_dates:
+                days_from_policy = (date - policy_dt).days
                 forecast_data.append({
                     'date': date,
                     'state': state,
                     'policy_date': policy_dt,
-                    'days_from_policy': (date - policy_dt).days,
-                    'policy_active': 1 if date >= policy_dt else 0
+                    'days_from_policy': days_from_policy,
+                    'policy_active': 1 if date >= policy_dt else 0,
+                    # Add the missing policy features that the trained models expect
+                    'post_policy_30d': 1 if days_from_policy <= 30 and days_from_policy >= 0 else 0,
+                    'post_policy_60d': 1 if days_from_policy <= 60 and days_from_policy >= 0 else 0,
+                    'pre_policy_30d': 1 if days_from_policy >= -30 and days_from_policy < 0 else 0,
                 })
         
         forecast_df = pd.DataFrame(forecast_data)
@@ -219,6 +224,18 @@ class PredictionService:
                 df.loc[state_mask, 'trend_enrolment'] = avg_enrolments * 1.05
             if 'trend_update' in expected_features:
                 df.loc[state_mask, 'trend_update'] = avg_updates * 1.05
+            
+            # Set additional policy features
+            if 'policy_period_days' in expected_features:
+                df.loc[state_mask, 'policy_period_days'] = df.loc[state_mask, 'days_from_policy'].abs()
+            if 'policy_intensity' in expected_features:
+                df.loc[state_mask, 'policy_intensity'] = 0.5  # Medium intensity
+            if 'policy_momentum' in expected_features:
+                df.loc[state_mask, 'policy_momentum'] = 0.3  # Building momentum
+            if 'regional_policy_impact' in expected_features:
+                df.loc[state_mask, 'regional_policy_impact'] = 0.4  # Regional impact factor
+            if 'temporal_policy_effect' in expected_features:
+                df.loc[state_mask, 'temporal_policy_effect'] = 0.6  # Temporal effect
         
         return df
     

@@ -36,14 +36,34 @@ class ModelLoader:
             
             models = {}
             
-            # First, load feature columns
+            # First, try to load feature columns from the actual trained models
             feature_cols_path = os.path.join(self.model_path, 'policy_feature_cols.pkl')
             if os.path.exists(feature_cols_path):
-                self._feature_columns = joblib.load(feature_cols_path)
-                logger.info(f"Loaded feature columns: {len(self._feature_columns)} features")
-            else:
-                self._feature_columns = self._get_default_feature_columns()
-                logger.warning(f"Using default feature columns: {len(self._feature_columns)} features")
+                try:
+                    self._feature_columns = joblib.load(feature_cols_path)
+                    logger.info(f"Loaded feature columns from file: {len(self._feature_columns)} features")
+                except Exception as e:
+                    logger.warning(f"Failed to load feature columns file: {e}")
+                    self._feature_columns = None
+            
+            # If we couldn't load feature columns, try to get them from a trained model
+            if self._feature_columns is None:
+                baseline_enrolment_path = os.path.join(self.model_path, 'enrolment_baseline_model.pkl')
+                if os.path.exists(baseline_enrolment_path):
+                    try:
+                        temp_model = joblib.load(baseline_enrolment_path)
+                        if hasattr(temp_model, 'feature_names_in_'):
+                            self._feature_columns = list(temp_model.feature_names_in_)
+                            logger.info(f"Extracted feature columns from model: {len(self._feature_columns)} features")
+                        else:
+                            logger.warning("Model doesn't have feature_names_in_ attribute")
+                            self._feature_columns = self._get_default_feature_columns()
+                    except Exception as e:
+                        logger.warning(f"Failed to extract features from model: {e}")
+                        self._feature_columns = self._get_default_feature_columns()
+                else:
+                    self._feature_columns = self._get_default_feature_columns()
+                    logger.warning(f"Using default feature columns: {len(self._feature_columns)} features")
             
             models['feature_columns'] = self._feature_columns
             
@@ -136,6 +156,7 @@ class ModelLoader:
         return [
             'year', 'month', 'day', 'day_of_week', 'week_of_year', 'is_weekend',
             'days_from_policy', 'policy_active',
+            'post_policy_30d', 'post_policy_60d', 'pre_policy_30d',
             'total_enrolments_lag_1', 'total_enrolments_lag_7', 'total_enrolments_lag_30',
             'total_updates_lag_1', 'total_updates_lag_7', 'total_updates_lag_30',
             'total_enrolments_rolling_mean_7', 'total_enrolments_rolling_mean_30',
@@ -147,7 +168,9 @@ class ModelLoader:
             'state_avg_enrolments', 'state_avg_updates',
             'enrolment_deviation', 'update_deviation',
             'seasonal_enrolment', 'seasonal_update',
-            'trend_enrolment', 'trend_update'
+            'trend_enrolment', 'trend_update',
+            'policy_period_days', 'policy_intensity', 'policy_momentum',
+            'regional_policy_impact', 'temporal_policy_effect'
         ]
     
     def align_features(self, X: pd.DataFrame) -> pd.DataFrame:

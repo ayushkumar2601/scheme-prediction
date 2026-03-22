@@ -18,6 +18,7 @@ def create_feature_columns():
     feature_columns = [
         'year', 'month', 'day', 'day_of_week', 'week_of_year', 'is_weekend',
         'days_from_policy', 'policy_active',
+        'post_policy_30d', 'post_policy_60d', 'pre_policy_30d',
         'total_enrolments_lag_1', 'total_enrolments_lag_7', 'total_enrolments_lag_30',
         'total_updates_lag_1', 'total_updates_lag_7', 'total_updates_lag_30',
         'total_enrolments_rolling_mean_7', 'total_enrolments_rolling_mean_30',
@@ -29,7 +30,9 @@ def create_feature_columns():
         'state_avg_enrolments', 'state_avg_updates',
         'enrolment_deviation', 'update_deviation',
         'seasonal_enrolment', 'seasonal_update',
-        'trend_enrolment', 'trend_update'
+        'trend_enrolment', 'trend_update',
+        'policy_period_days', 'policy_intensity', 'policy_momentum',
+        'regional_policy_impact', 'temporal_policy_effect'
     ]
     
     model_path = os.getenv('MODEL_PATH', 'data/models')
