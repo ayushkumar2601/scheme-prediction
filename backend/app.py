@@ -34,12 +34,13 @@ def create_app():
     """Application factory"""
     app = Flask(__name__)
     
-    # Enable CORS for all origins (more permissive for deployment)
+    # Enable CORS - very permissive configuration
     CORS(app, 
-         origins=["*"],  # Allow all origins for now
+         origins="*",  # Allow all origins
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         allow_headers=["Content-Type", "Authorization", "Accept"],
-         supports_credentials=False)
+         allow_headers=["*"],  # Allow all headers
+         supports_credentials=False,
+         send_wildcard=True)
     
     # Register blueprints
     app.register_blueprint(api_bp, url_prefix='/api')
@@ -93,7 +94,8 @@ def create_app():
         return jsonify({
             "service": "Aadhaar Policy Impact Prediction API",
             "status": "running",
-            "version": "1.0.0",
+            "version": "1.0.1",  # Updated version to force redeploy
+            "cors_fixed": True,
             "endpoints": {
                 "health": "/health",
                 "predict": "/api/predict",
@@ -115,12 +117,13 @@ def create_app():
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response, 500
     
-    # Add CORS headers to all responses
+    # Add CORS headers to all responses - force override
     @app.after_request
     def after_request(response):
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Headers'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+        response.headers['Access-Control-Max-Age'] = '86400'
         return response
     
     return app
